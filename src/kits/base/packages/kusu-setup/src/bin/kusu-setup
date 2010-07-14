@@ -105,7 +105,7 @@ class KusuSetup:
                 selinuxstatus = selinuxcheckcommand.SELinuxCheckCommand()
                 selinuxstatus.execute()
                 if not selinuxstatus.proceedStatus:
-                    message.failure("%s\n" % selinuxstatus.quitMessage)
+                    message.failure("%s" % selinuxstatus.quitMessage)
                     sys.exit(1)
             
                 sanitizeInstall = sanitizeinstallcommand.SanitizeInstallCommand(self._cleanupReceiver)
@@ -124,7 +124,7 @@ class KusuSetup:
                 rpmCheck = rpmcheckcommand.RpmCheckCommand(self._installerInitReceiver)
                 rpmCheck.execute()
                 if not rpmCheck.proceedStatus:
-                    message.failure("%s\n" % rpmCheck.quitMessage)
+                    message.failure("%s" % rpmCheck.quitMessage)
                     sys.exit(1)
 
                 ##Create Network Receiver
@@ -134,7 +134,7 @@ class KusuSetup:
                 systemSettings = systemsettingscommand.SystemSettingsCommand(self._networkReceiver, self._keyboard_receiver, self._language_receiver, self._timezone_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
                 systemSettings.execute()
                 if not systemSettings.proceedStatus:
-                   message.failure("%s\n" % systemSettings.quitMessage)
+                   message.failure("%s" % systemSettings.quitMessage)
                    sys.exit(1)
 
                 ##Check for minimum RAM requirement
@@ -142,7 +142,7 @@ class KusuSetup:
                 ramCheck = ramcheckcommand.RamCheckCommand(self._ramCheckReceiver)
                 ramCheck.execute()
                 if not ramCheck.proceedStatus:
-                   message.warning("%s\n" % ramCheck.quitMessage)
+                   message.warning("%s" % ramCheck.quitMessage)
                   # sys.exit(1)
 
                 ##Check for sufficient diskspace
@@ -150,14 +150,14 @@ class KusuSetup:
                 diskSpaceCheck = diskspacecheckcommand.DiskSpaceCheckCommand(self._diskSpaceCheckReceiver)
                 diskSpaceCheck.execute()
                 if not diskSpaceCheck.proceedStatus:
-                    message.failure("%s\n" % diskSpaceCheck.quitMessage)
+                    message.failure("%s" % diskSpaceCheck.quitMessage)
                     sys.exit(1)
          
                 ##Check if we have enough NICs
                 nicCheck = niccheckcommand.NicCheckCommand(self._networkReceiver, systemSettings.configuredNicCount)
                 nicCheck.execute()
                 if not nicCheck.proceedStatus:
-                    message.failure("%s\n" % nicCheck.quitMessage)
+                    message.failure("%s" % nicCheck.quitMessage)
                     sys.exit(1)
          
                 ##Check our DHCP config
@@ -165,7 +165,7 @@ class KusuSetup:
                 dhcpCheck = dhcpcheckcommand.DhcpCheckCommand(self._networkReceiver)
                 dhcpCheck.execute()
                 if not dhcpCheck.proceedStatus:
-                    message.failure("%s\n" % dhcpCheck.quitMessage)
+                    message.failure("%s" % dhcpCheck.quitMessage)
                     sys.exit(1)
          
                 ## Check for timestamp, language, FQDN, Keyboard
@@ -173,7 +173,7 @@ class KusuSetup:
                 envCheck = envcheckcommand.EnvCheckCommand(nicCheck.provisionInterfaceTuple, nicCheck.publicInterfaceTuple, self._fqdn_receiver)
                 envCheck.execute()
                 if not envCheck.proceedStatus:
-                    message.failure("%s\n" % envCheck.quitMessage)
+                    message.failure("%s" % envCheck.quitMessage)
                     sys.exit(1)
 
         
@@ -199,7 +199,7 @@ class KusuSetup:
                 initKusuDB = initkusudbcommand.InitKusuDBCommand(self._initKusuDBReceiver, nicCheck, dhcpCheck, envCheck, systemSettings)
                 initKusuDB.execute()
                 if not initKusuDB.proceedStatus:
-                    message.failure("\n%s" % initKusuDB.quitMessage)  
+                    message.failure("%s" % initKusuDB.quitMessage)  
                     sys.exit(1)
          
                 self._createOSRepoReceiver = createosreporeceiver.CreateOSRepoReceiver(self._db)
@@ -211,14 +211,14 @@ class KusuSetup:
                 installOSKit = installoskitcommand.InstallOSKitCommand(self._installOSKitReceiver)
                 installOSKit.execute()
                 if not installOSKit.proceedStatus:
-                    message.failure("\n%s" % installOSKit.quitMessage)
+                    message.failure("%s" % installOSKit.quitMessage)
                     sys.exit(1)
          
                 ##Prompt for, and install additional kits
                 installExtraKit = installextrakitcommand.InstallExtraKitCommand(self._installOSKitReceiver)
                 installExtraKit.execute()
                 if not installExtraKit.proceedStatus:
-                    message.failure("\n%s" % installExtraKit.quitMessage)
+                    message.failure("%s" % installExtraKit.quitMessage)
                     sys.exit(1)
                   
                 
@@ -227,7 +227,7 @@ class KusuSetup:
                 createOSRepo = createosrepocommand.CreateOSRepoCommand(self._createOSRepoReceiver)
                 createOSRepo.execute()
                 if not createOSRepo.proceedStatus:
-                    message.failure("\n%s" % createOSRepo.quitMessage)
+                    message.failure("%s" % createOSRepo.quitMessage)
                     sys.exit(1)
 
                 #refresh the repo

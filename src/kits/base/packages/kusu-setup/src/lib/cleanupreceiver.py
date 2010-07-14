@@ -111,7 +111,7 @@ class CleanupReceiver:
         dirtyFlag = False
 
         #Check for presence of /depot
-        message.display("\nChecking for presence of '/depot' folder")
+        message.display("Checking for presence of '/depot' folder")
         if os.path.exists("/depot"):
             dirtyFlag = True
             self._need_to_remove_depot = True
@@ -122,7 +122,7 @@ class CleanupReceiver:
 
 
         #Check for presence of kusudb
-        message.display("\nChecking for presence of kusudb database")
+        message.display("Checking for presence of kusudb database")
 
         if self.isDBAvailable():
             dirtyFlag = True
@@ -134,7 +134,7 @@ class CleanupReceiver:
 
         #Check for presence of kusu rpms
         #FIXME: Check only for component-* rpms
-        message.display("\nChecking for presence of Kusu RPMs")
+        message.display("Checking for presence of Kusu RPMs")
 
         if self.hasRPM("component-base-installer") or self.hasRPM("component-base-node") or self.hasRPM("component-gnome-desktop") :
             dirtyFlag = True

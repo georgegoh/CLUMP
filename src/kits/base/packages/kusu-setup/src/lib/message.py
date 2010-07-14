@@ -27,8 +27,8 @@ except:
 
 import kusu.util.log as kusulog
 
-kl = kusulog.getKusuLog('setup')
-kl.addFileHandler()
+kl = kusulog.getKusuLog()
+kl.addFileHandler('/var/log/kusu/kusu-setup.log')
 
 def display(desc):
     ignore_first_print = 1
