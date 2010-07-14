@@ -211,8 +211,8 @@ $(foreach pkg,$(SPEC_MODE_PKGS),$(eval $(call PKG_GET_DATA_FROM_SPEC,$(pkg))))
 # Generate targets for each package.
 $(foreach pkg,$(SOURCE_MODE_PKGS),$(foreach rule,$(SOURCE_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 $(foreach pkg,$(PARENT_MODE_PKGS),$(foreach rule,$(PARENT_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
-$(foreach pkg,$(SPEC_MODE_PKGS),$(foreach rule,$(SPEC_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 $(foreach pkg,$(SRPM_MODE_PKGS),$(foreach rule,$(SRPM_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
+$(foreach pkg,$(SPEC_MODE_PKGS),$(foreach rule,$(SPEC_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 $(foreach pkg,$(RPM_MODE_PKGS),$(foreach rule,$(RPM_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 $(foreach pkg,$(INSTALLER_PKGS),$(foreach rule,$(INSTALLER_MODE_RULES),$(eval $(call $(rule),$(pkg)))))
 

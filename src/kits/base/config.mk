@@ -281,7 +281,7 @@ KIT_PKGS += PKG_PATH
 PKG_PATH_SPEC = kusu-path.spec
 PKG_PATH_SOURCES = src
 
-# Setup package.
+# Kusu Setup package.
 KIT_PKGS += PKG_SETUP
 PKG_SETUP_NAME = kusu-setup
 PKG_SETUP_SPEC = kusu-setup.spec
