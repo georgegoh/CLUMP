@@ -678,24 +678,19 @@ class boothost:
 class BootHostApp(KusuApp):
 
     def __init__(self):
-        is_webserver_user = False
 
-        if os.getuid() != 0:
+        if os.getuid() == 0:
+            # Get the Lang stuff from the kusuapp class
+            KusuApp.__init__(self)
+        else:
+            KusuApp.__init__(self, dummy_app=True)
+
             # apache(RHEL)/wwwrun(SLES) is allowed for nodeboot.cgi
             webserver_user = Dispatcher.get('webserver_usergroup')[0]
             webuser = pwd.getpwnam(webserver_user)
-            if os.getuid() == webuser[2]:
-                is_webserver_user = True
-            else:
-                KusuApp.__init__(self)
+            if os.getuid() != webuser[2]:
                 self.errorMessage("nonroot_execution\n")
                 sys.exit(-1)
-
-        # Get the Lang stuff from the kusuapp class
-        if is_webserver_user:
-            KusuApp.__init__(self, dummy_app=True)
-        else:
-            KusuApp.__init__(self)
 
         self.updatewhat = ''
         self._retrieveDBData()
