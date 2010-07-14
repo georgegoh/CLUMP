@@ -46,7 +46,7 @@ class SystemSettingsCommand(Command):
             if self._diskspace_receiver.is_depot_valid_installdir():
                 message.success()
             else:
-                message.failure("Kusu Setup has found existing '/depot' mountpoint with insufficient diskspace.\nMake sure that the '/depot' partition has at least %dGB of free diskspace." % (MINIMUM_DISK_SPACE_REQ/1024))
+                message.failure("Found existing '/depot' mountpoint with insufficient diskspace.\nMake sure that the '/depot' partition has at least %dGB of free diskspace." % (MINIMUM_DISK_SPACE_REQ/1024))
                 self._quitMessage = "\nBye!"
                 self._proceedStatus = False
                 return
@@ -56,8 +56,8 @@ class SystemSettingsCommand(Command):
         interfaces, properties = self._networkReceiver.physicalInterfacesAndProperties
 
         #iterate over all the interfaces, validating at least
-        #2 static, configured interfaces
-        message.display("Checking for at least 1 configured NIC")
+        #1 statically configured interfaces
+        message.display("Checking for at least 1 statically configured NIC")
         ipCount=0
         for interface in interfaces:
            if properties[interface]['ip'] is not None and\
@@ -70,7 +70,7 @@ class SystemSettingsCommand(Command):
             self._proceedStatus = True
         else:
             self._proceedStatus = False
-            self._quitMessage = "Not enough statically configured network interfaces.\nKusu installation requires at least 1 statically configured network interface."
+            self._quitMessage = "Not enough statically configured network interfaces.\nAt least 1 statically configured network interface required."
             return
 
         #make a note of how many configured interfaces we have
@@ -78,7 +78,7 @@ class SystemSettingsCommand(Command):
 
         message.display("Checking for the public hostname")
         if not self._fqdn_receiver.pub_dns_discover():
-            message.failure("Kusu Setup is not able to discover the public hostname.\nDo configure a valid public FQDN for your machine.")
+            message.failure("Not able to discover the public hostname.\nDo configure a valid public FQDN for your machine.")
             self._quitMessage = "\nBye!"
             self._proceedStatus = False
             return

@@ -48,12 +48,12 @@ def display_status(cmd):
     runP.communicate()
 
 def failure(msg=None, print_status=True):
-    if msg:
-        kl.error(msg)
-
     if print_status:
         cmd = 'source /lib/lsb/init-functions && log_failure_msg "$@"'
         display_status(cmd)
+    if msg:
+        kl.error(msg)
+        display(msg)
 
 def success(msg=None, print_status=True):
     if msg:
@@ -65,10 +65,10 @@ def success(msg=None, print_status=True):
         display_status(cmd)
 
 def warning(msg=None, print_status=True):
+    if print_status:
+        cmd = 'source /lib/lsb/init-functions && log_warning_msg "$@"'
+        display_status(cmd)
     if msg:
         kl.warning(msg)
         display(msg)
 
-    if print_status:
-        cmd = 'source /lib/lsb/init-functions && log_warning_msg "$@"'
-        display_status(cmd)
