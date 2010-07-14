@@ -424,6 +424,8 @@ class InstallOSKitReceiver:
         if os:
            self.os_kit = os[0]
         for kit in self.kitops.listKit():
+            if kit.isOS:
+                continue
             components = self.kitops.getKitComponents(kit.kid, self.os_kit.os)
             if not components:
                 incompatible.append(kit)
