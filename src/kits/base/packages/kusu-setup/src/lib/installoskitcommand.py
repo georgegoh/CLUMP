@@ -38,7 +38,7 @@ class InstallOSKitCommand(Command):
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
             except:
-                message.display("Invalid option is given.")
+                message.display("\nInvalid option is given.")
                 continue
 
             if value == 1:
@@ -48,12 +48,12 @@ class InstallOSKitCommand(Command):
             elif value == 2:
                 status, msg = self._receiver.installKitsOnBootMedia('iso')
             else:
-                message.display("Invalid option is given.")
+                message.display("\nInvalid option is given.")
                 continue
 
             if not status:
                 message.display(msg)
-                message.display("Installation can't continue until the 'base kit' has been installed")
+                message.display("\nInstallation can't continue until the 'base kit' has been installed")
                 self._proceedStatus = False
             else:
                 self._proceedStatus = True
@@ -67,7 +67,7 @@ class InstallOSKitCommand(Command):
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
             except:
-                message.display("Invalid option is given.")
+                message.display("\nInvalid option is given.")
                 continue
 
             if value == 1:
@@ -77,12 +77,12 @@ class InstallOSKitCommand(Command):
             elif value == 2:
                 status, msg = self._receiver.install_os_kit('iso')
             else:
-                message.display("Invalid option is given.")
+                message.display("\nInvalid option is given.")
                 continue
 
             if not status:
                 message.display(msg)
-                message.display("Installation can't continue until the 'OS kit' has been installed")
+                message.display("\nInstallation can't continue until the 'OS kit' has been installed")
                 self._proceedStatus = False
             else:
                 self._proceedStatus = True

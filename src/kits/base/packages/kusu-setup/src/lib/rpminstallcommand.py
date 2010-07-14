@@ -43,7 +43,7 @@ class RpmInstallCommand(Command):
         #    self._quitMessage = "Kusu RPMs provided are not OS-compatible with the Installer machine."
         #    return
 
-        message.display("Installing Kusu RPMs")
+        message.display("\nInstalling Kusu RPMs")
         status = self._receiver.installRPMs(self._repoid)
 
         if status:
@@ -52,5 +52,5 @@ class RpmInstallCommand(Command):
         else:
             message.failure()
             self._proceedStatus = False
-            self._quitMessage = "RPM Installation failed. Exiting."
+            self._quitMessage = "\nRPM Installation failed. Exiting."
 

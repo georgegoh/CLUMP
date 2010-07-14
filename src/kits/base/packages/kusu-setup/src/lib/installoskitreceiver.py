@@ -127,7 +127,7 @@ class InstallOSKitReceiver:
                                           'during installation. ' + \
                                           'You can add additional OS kit using kusu-kitops later.'
 
-                        message.display('Verifying that OS is the right distro, arch, version')
+                        message.display('\nVerifying that OS is the right distro, arch, version')
                         verified, err_list = self.verifyDistroVersionAndArch(self.kits)
                         if not verified:
                             return False, 'Cannot add OS kit ' + \
@@ -137,10 +137,10 @@ class InstallOSKitReceiver:
                         try:
                             self.addOSKit(self.kitops, self.kits, cd)
                         except Exception, msg:
-                            return False, "Failed to add OS Kit:  %s" % msg
+                            return False, "\nFailed to add OS Kit:  %s" % msg
 
                 except Exception, msg:
-                    return False,  "Failed to mount kit media: %s" % msg
+                    return False,  "\nFailed to mount kit media: %s" % msg
                 return True, ""
         elif kit_media == 'iso':
             kit_iso = self.prompt_for_kit()
@@ -158,7 +158,7 @@ class InstallOSKitReceiver:
                                       'during installation. ' + \
                                       'You can add additional OS kit using kusu-kitops later.'
 
-                    message.display('Verifying that OS is the right distro, arch, version')
+                    message.display('\nVerifying that OS is the right distro, arch, version')
                     verified, err_list = self.verifyDistroVersionAndArch(kits)
                     if not verified:
                         return False, 'Cannot add OS kit ' + \
@@ -178,17 +178,17 @@ class InstallOSKitReceiver:
                     try:
                         self.kitops.addKitPrepare()
                     except UnrecognizedKitMediaError, e:
-                        msg = 'Failed to add kit media: %s: %s' \
+                        msg = '\nFailed to add kit media: %s: %s' \
                                      % (res, e.args[0])
                         return False, msg
 
                 if prepare_success:
                     try:
-                        message.display('Copying OS kit (%s). This might take a while...' % kit['name'])
+                        message.display('\nCopying OS kit (%s). This might take a while...' % kit['name'])
 
                         self.kitops.copyOSKitMedia(kit)
                     except CopyOSMediaError, e:
-                        msg = 'Failed to add OS kit: %s' % e.args[0]
+                        msg = '\nFailed to add OS kit: %s' % e.args[0]
                         return False, msg
 
                 answer = 'FAKE_ANSWER'
@@ -202,11 +202,11 @@ class InstallOSKitReceiver:
                 self.kitops.setKitMedia('')
 
                 if res.lower() in ['y', 'yes']:
-                    message.display("Please insert next disk if installing from phys. media NOW")
+                    message.display("\nPlease insert next disk if installing from phys. media NOW")
                     if not prepare_success:
-                        message.display("Copying from the media you specified was not " + \
+                        message.display("\nCopying from the media you specified was not " + \
                               "successful. Try again...")
-                    message.display('(URI for next ISO | blank if phys. media | N to finish):')
+                    message.display('(\nURI for next ISO | blank if phys. media | N to finish):')
                     res = sys.stdin.readline().strip()
                     if res.lower() == 'n': break
                     elif not res: res = self.determineKitMedia()
@@ -639,7 +639,7 @@ class InstallOSKitReceiver:
                     if boot_cd:
                         break
                 except CannotMountKitMediaError:
-                    return False, "Failed to mount media."
+                    return False, "\nFailed to mount media."
 
             if boot_cd:
                 print ('About to install base kit before showing kit screen')
