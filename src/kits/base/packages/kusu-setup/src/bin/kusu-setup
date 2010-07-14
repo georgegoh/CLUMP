@@ -147,7 +147,7 @@ class KusuSetup(object):
                 sys.exit(0)
 
             ##Create Network Receiver
-            self._networkReceiver = networkreceiver.NetworkReceiver(rpmCheck.distroName)
+            self._networkReceiver = networkreceiver.NetworkReceiver(self.os_type)
 
             ##Do discovery of system settings
             systemSettings = systemsettingscommand.SystemSettingsCommand(self._installerInitReceiver, self._networkReceiver, self._language_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
