@@ -41,60 +41,6 @@ class CreateOSRepoReceiver(object):
     def __init__(self, db):
         self.__db = db
 
-    def verify_if_repo_exists(self):
-        if not self.__db.Repos.select():
-            return False
-        return True
-
-    def verify_if_os_kit_is_installed(self):
-        if self.__db.Kits.select_by(self.__db.Kits.c.isOS == True):
-            return True
-        return False
-
-    def verify_if_base_kit_is_installed(self):
-        if self.__db.Kits.select_by(self.__db.Kits.c.rname == 'base'):
-            return True
-        return False
-
-    def retrieve_os_kit(self):
-        return self.__db.Kits.select_by(self.__db.Kits.c.isOS == True)[0]
-
-    def retrieve_os_kit_info(self, osid):
-        return self.__db.OS.select_by(self.__db.OS.c.osid == osid)[0]
-
-    def create_new_os_repo(self, os):
-        repo_name = '%s-%s.%s-%s ' % (os.name, os.major, os.minor, os.arch)
-        cmd = REPOMAN_NEW_REPO_COMMAND % (repo_name)
-        out, err = runCommand(cmd)
-        if out:
-            message.display("\n%s" % (out[0:out.find('You can')-1]))
-        if err:
-            message.warning("\n%s" % err[0], 0)
-
-    def retrieve_all_kits_installed(self):
-        return self.__db.Kits.select()
-
-    def retrieve_repo_name(self):
-        return self.__db.Repos.select()[0].reponame
-
-    def add_kits_to_repo(self, kits_list, repo_name):
-        for kit in kits_list:
-            cmd = REPOMAN_ADD_KIT_COMMAND % (repo_name, kit.kid)
-            out, err = runCommand(cmd)
-            if out:
-                message.display(out[0:out.find('Remember')-1])
-            if err:
-                message.warning(err[0], 0)
-
-    def refresh_repo(self, repo_name):
-        message.display("\nRefreshing repo: %s now. This may take some time..." % repo_name)
-        cmd = REPOMAN_REFRESH_REPO_COMMAND % (repo_name)
-        out, err = runCommand(cmd)
-        if err:
-            message.warning("\nThe repository was not properly refreshed.\nDo a manual refresh once the installer exits.", 0)
-        else:
-            message.success()
-
     def makeRepo(self):
         """ This method updates our temporary DELETEME repo, and creates
             the new repo with id 1000. This new repo must be refreshed.

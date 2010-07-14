@@ -58,4 +58,4 @@ class Command(object):
 
     ## Define our properties
     quitMessage = property(getQuitMessage)
-    proceedStatus =  property(getProceedStatus)
+    proceedStatus = property(getProceedStatus)

@@ -30,8 +30,8 @@ class NicCheckCommand(Command):
         self._receiver = receiver
         self._configuredNicCount = configuredNicCount
 
-        ## We gather information on the provisioning network interface, and exposes
-        ## a tuple consisting of : (interface, properties)
+        ## We gather information on the provisioning network interface,
+        ## and expose a tuple consisting of : (interface, properties)
         self.provisionInterfaceTuple = None
         self.publicInterfaceTuple = None
 
@@ -71,7 +71,6 @@ class NicCheckCommand(Command):
 
         return status, (interfaces[value], properties[interfaces[value]])
 
-
     def _promptForPublicNic(self):
         interfaces, properties = self._receiver.physicalInterfacesAndProperties
         if self.provisionInterfaceTuple:
@@ -79,11 +78,9 @@ class NicCheckCommand(Command):
             interfaces.remove(self.provisionInterfaceTuple[0])
         return self._promptForNic(interfaces, properties, "public")
 
-
     def _promptForProvisioningNic(self):
         interfaces, properties = self._receiver.physicalInterfacesAndProperties
         return self._promptForNic(interfaces, properties, "provisioning")
-
 
     def execute(self):
 
@@ -95,8 +92,8 @@ class NicCheckCommand(Command):
 
         #if we have more than one configured nic, we prompt for whether the user want's to configure
         # a second/public nic.
-        if self._configuredNicCount > 1 and self.getYesNoAsBool("\nWould you like to configure a public network"):
-
+        if self._configuredNicCount > 1 and \
+                self.getYesNoAsBool("\nWould you like to configure a public network"):
             status, self.publicInterfaceTuple = self._promptForPublicNic()
             if not status:
                 return

@@ -65,4 +65,4 @@ class KeyboardReceiver(object):
 
 if __name__ == "__main__":
     keyboard = KeyboardCommandReceiver()
-    keyboard.run()
+

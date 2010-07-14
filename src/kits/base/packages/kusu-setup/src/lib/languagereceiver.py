@@ -41,9 +41,9 @@ class LanguageReceiver(object):
         run_cmd = subprocess.Popen(command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         out, err = run_cmd.communicate()
         if out:
-             self._language = out.split('=')[1].split('.')[0]
+            self._language = out.split('=')[1].split('.')[0]
         else:
-             raise KusuProbePluginError, "Not able to figure out the system language."
+            raise KusuProbePluginError, "Not able to figure out the system language."
 
         message.success()
         return True

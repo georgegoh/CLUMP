@@ -22,7 +22,6 @@ import os
 import sys
 
 sys.path.append('/opt/kusu/bootstrap/lib/python')
-sys.path.append('/opt/kusu/bootstrap/lib/python/pysrc')
 sys.path.append('/opt/kusu/bootstrap/primitive/lib/python2.4/site-packages/')
 
 from kusu.kitops.kitops import KitOps
@@ -164,14 +163,6 @@ class InstallOSKitReceiver(object):
         m.update(str(sortedRPMs)) #alternatively the list can be flattened into a string: "".join(sortedRPMS)
 
         return m.hexdigest()
-
-    def closeTray(self, path):
-        """Close a CD/DVD drive. Give me a path string."""
-        p = subprocess.Popen('eject -t %s' % path,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        return p.communicate()
 
     def _check_kit_distro_and_arch(self, distro_name, distro_arch, distro_ver):
         distro_family = distro_name # Assume that the family name is passed

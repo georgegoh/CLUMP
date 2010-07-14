@@ -18,10 +18,10 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
+import os
 from time import sleep
 from primitive.support.util import runCommand
 from primitive.core.errors import ModuleException
-import os
 from kusu.kitops.kitops import KitOps
 import kusu.core.database as db
 import message
@@ -59,7 +59,8 @@ KUSU_RPM_LIST = [
 
 class CleanupReceiver(object):
     """
-       This class performs cleanup/sanitization of environment before bootstrap is run or re-run.
+       This class performs cleanup/sanitization of environment before
+       bootstrap is run or re-run.
     """
     def __init__(self):
         self._need_to_dropdb = False
@@ -73,7 +74,7 @@ class CleanupReceiver(object):
             return True
         return False
 
-    def isDBAvailable(self):
+    def dbIsAvailable(self):
         from kusu.core import database as db
         import sqlalchemy as sa
 
@@ -120,15 +121,14 @@ class CleanupReceiver(object):
         #Check for presence of kusudb
         message.display("\nChecking for presence of kusudb database")
 
-        if self.isDBAvailable():
+        if self.dbIsAvailable():
             dirtyFlag = True
             self._need_to_dropdb = True
             message.warning("\nA kusudb database was found")
         else:
             message.success()
 
-        #Check for presence of kusu rpms
-        #FIXME: Check only for component-* rpms
+        #Check for presence of kusu component-* rpms
         message.display("\nChecking for presence of Kusu RPMs")
 
         if self.hasRPM("component-base-installer") or \
@@ -145,7 +145,8 @@ class CleanupReceiver(object):
 
     def cleanup(self):
         """
-            This method completely removes all traces of a kusu install from the system
+            This method completely removes all traces of a kusu
+            install from the system.
         """
         if self._dirtyFlag:
             #remove all RPMs

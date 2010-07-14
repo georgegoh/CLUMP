@@ -44,15 +44,6 @@ class NetworkReceiver(object):
         self.intf = None
         self.intf_property = None
 
-    def get_provisioning_interface(self):
-        """ Interface to expose the provisioning interface selected by the user.
-            This method should ideally be called after the run method. """
-        return self.intf, self.intf_property
-
-    def get_dhcp_status(self):
-        """ Returns True if Installer is serving DHCP. """
-        return self.servingDhcp
-
     def hasRPM(self, rpmName):
         outStr, errStr = runCommand("rpm -qai %s" % rpmName)
         if outStr.find(rpmName) >= 0:

@@ -74,7 +74,6 @@ class InstallExtraKitCommand(Command):
                 message.display("Input is not valid. Enter either A, D or C.")
                 continue
 
-        kits = []
         kits = self._receiver.find_incompatible_kits()
         if kits:
             message.warning(msg, 0)

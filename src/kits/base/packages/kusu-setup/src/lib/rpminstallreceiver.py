@@ -35,8 +35,6 @@ try:
 except:
     from popen5 import subprocess
 
-FIND_COMMAND = 'find -P %s -name kit-base*.rpm'
-
 class RpmInstallReceiver(object):
 
     def _disableIptablesKusurc(self):
@@ -85,22 +83,4 @@ gpgcheck=0
             self._disableIptablesKusurc()
 
         return yumCmd.returncode == 0 #assume success if returncode == 0
-
-    def retrieveKitRPM(self, basedir):
-        basedir = path(basedir)
-        if basedir.exists():
-            cmd = FIND_COMMAND % basedir
-            fCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-            out, err = fCmd.communicate()
-            if out:
-                return out.rstrip('\n')
-
-    def verifyRPMDistro(self, kit_info_component):
-        if kit_info_component[0]['name'] == 'component-base-installer':
-            base_os = kit_info_component[0]['os']
-            base_os_name = base_os[0]['name']
-            installer = InstallerInitReceiver()
-            if installer.distroName.lower() in osfamily.getOSNames('rhelfamily') and base_os_name == 'rhelfamily':
-                return True
-        return False
 
