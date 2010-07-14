@@ -155,7 +155,6 @@ install -m644 lib/installoskitcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/boo
 install -m644 lib/installoskitreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/niccheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/networkreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/keyboardreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/languagereceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/ramcheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/ramcheckreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
@@ -166,7 +165,6 @@ install -m644 lib/sanitizeinstallcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/
 install -m644 lib/selinuxcheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/setup_errors.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/systemsettingscommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/timezonereceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m755 doc/COPYING $RPM_BUILD_ROOT/%{_kusu}/share/doc/%{name}-%{version}
