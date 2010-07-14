@@ -1,4 +1,22 @@
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of version 2 of the GNU General Public License as published by the
+# Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from command import Command
 import message
@@ -20,11 +38,9 @@ class SystemSettingsCommand(Command):
         self._fqdn_receiver = fqdn_receiver
         self._diskspace_receiver = diskspace_receiver
 
-
     def execute(self):
 
         # Handle existing '/depot' mountpoint
-
         message.display("Checking for existing '/depot' mountpoint")
         if self._diskspace_receiver.is_depot_mountpoint():
             if self._diskspace_receiver.is_depot_valid_installdir():
@@ -36,7 +52,7 @@ class SystemSettingsCommand(Command):
                 self._proceedStatus = False
                 return
         else:
-            message.success()   
+            message.success()
 
         interfaces, properties = self._networkReceiver.physicalInterfacesAndProperties
 
@@ -57,7 +73,7 @@ class SystemSettingsCommand(Command):
             self._quitMessage = "Not enough statically configured network interfaces.\n    Kusu installation requires at least 1 statically configured network interfaces"
             return
 
-        #make a note of how many configured interfaces we have 
+        #make a note of how many configured interfaces we have
         self.configuredNicCount = ipCount
 
         message.display("Checking for the public hostname.")
@@ -68,9 +84,7 @@ class SystemSettingsCommand(Command):
             self._proceedStatus = False
             return
         else:
-            message.success() 
-
-
+            message.success()
 
         message.display("Checking for existing DNS server.")
         if self._networkReceiver.is_dns_installed():
@@ -94,7 +108,6 @@ class SystemSettingsCommand(Command):
         else:
             message.success()
 
-
         try:
             self._kb_receiver.probe_keyboard()
             self.keyboardLayout = self._kb_receiver.keyboardLayout
@@ -111,8 +124,7 @@ class SystemSettingsCommand(Command):
             message.failure()
             self._proceedStatus = False
             self._quitMessage = "Failed to properly detect system settings [%s]. Quitting." % msg
-            return 
-
+            return
 
         message.display("Probing for DNS settings")
         resolvList = self._networkReceiver.nameservers
@@ -131,10 +143,9 @@ class SystemSettingsCommand(Command):
                     for ip in nslist:
                         if ipfun.validIP(ip):
                             #remove invalid ips from list
-                            validList.append(ip) 
+                            validList.append(ip)
 
                 if len(validList) > 0:
-                           
                     message.success()
                     self.nameservers = validList
                     self._proceedStatus = True
@@ -145,8 +156,4 @@ class SystemSettingsCommand(Command):
         else:
             self.nameservers = resolvList
             message.success()
-
-
-            
-
 
