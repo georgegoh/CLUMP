@@ -50,6 +50,7 @@ class KusuSetup:
         self.os_type = name.lower()
         os.environ['KUSU_DIST'] = self.os_type
         os.environ['KUSU_DB_ENGINE'] = 'sqlite' #first phase we use sqlite
+        os.environ['KUSU_ROOT'] = '/opt/kusu/bootstrap/'
 
         #add our sbin folder to pickup genupdatesimg
         os.environ['PATH'] = os.environ['PATH'] + ':/opt/kusu/bootstrap/sbin:'
