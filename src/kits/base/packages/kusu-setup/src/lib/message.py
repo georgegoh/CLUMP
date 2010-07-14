@@ -53,7 +53,7 @@ def failure(msg=None, print_status=True):
         display_status(cmd)
     if msg:
         kl.error(msg)
-        display(msg)
+        display("%s\n" % msg)
 
 def success(msg=None, print_status=True):
     if msg:
@@ -70,5 +70,5 @@ def warning(msg=None, print_status=True):
         display_status(cmd)
     if msg:
         kl.warning(msg)
-        display(msg)
+        display("%s\n" % msg)
 
