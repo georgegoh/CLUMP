@@ -30,9 +30,10 @@ from path import path
 from bootstrap.setup import *
 from kusu.core import database as db
 from kusu.core.rcplugin import PluginRunner
-from primitive.system.software import probe as softprobe
-from primitive.support.util import runCommand
 from kusu.repoman.repofactory import RepoFactory
+from primitive.support import osfamily
+from primitive.support.util import runCommand
+from primitive.system.software import probe as softprobe
 from primitive.system.software.dispatcher import Dispatcher
 
 try:
@@ -271,7 +272,8 @@ commands to generate new firewall rules:
 # /opt/kusu/bin/kusurc /etc/rc.kusu.d/firstrun/S03KusuIptables.rc.py
 """)
 
-        message.display("""
+        if self.os_type in osfamily.getOSNames('rhelfamily') + ['fedora']:
+            message.display("""
 \n
 All existing repos in /etc/yum.repos.d have been
 disabled. Do re-enable any required repos manually.
