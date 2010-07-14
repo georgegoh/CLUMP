@@ -18,12 +18,12 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-from command import Command
-from string import upper
 import message
+from command import Command
+from primitive.support import osfamily
 
-#FIXME: This must be a build-time make macro
-SUPPORTED_OPERATING_SYSTEMS = ['RHEL', 'CENTOS', 'SCIENTIFICLINUXCERN', 'SCIENTIFICLINUX']
+KUSU_DISTRO_NAME = '${KUSU_DISTRO_NAME}'
+KUSU_DISTRO_VERSION = '${KUSU_DISTRO_VERSION}'
 
 class RpmCheckCommand(Command):
     """
@@ -34,15 +34,20 @@ class RpmCheckCommand(Command):
         self._receiver = receiver
         self.distroName = None
 
+    def distro_and_system_is_of_rhelfamily(self):
+        return self._receiver.distroName.lower() in osfamily.getOSNames('rhelfamily') and \
+                KUSU_DISTRO_NAME.lower() in osfamily.getOSNames('rhelfamily')
+
     def execute(self):
         message.display("Checking for OS compatibility")
 
-        if upper(self._receiver.distroName) in SUPPORTED_OPERATING_SYSTEMS:
+        if (self._receiver.distroName.lower() == KUSU_DISTRO_NAME.lower() or \
+                self.distro_and_system_is_of_rhelfamily()) and \
+                self._receiver.distroRelease == KUSU_DISTRO_VERSION:
             message.success()
             self._proceedStatus = True
             self.distroName = self._receiver.distroName
         else:
-            #message.failure()
             self._proceedStatus = False
             self._quitMessage = "This operating system is not compatible with this installer."
 
