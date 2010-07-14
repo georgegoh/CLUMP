@@ -196,8 +196,8 @@ class InstallOSKitReceiver:
             message.failure('Wrong OS disk. Inserted OS disk does ' \
                             'not match selected operating system: %s. ' \
                             'Insert the correct disc.\n\n' \
-                            'Expected name: %s ver: %s arch: %s\n' \
-                            'Given name: %s ver: %s arch: %s' % \
+                            'Expected name: %s, ver: %s, arch: %s\n' \
+                            'Given name: %s, ver: %s, arch: %s' % \
                             (self.bootstrap_os_type,
                              self.bootstrap_os_type,
                              self.bootstrap_os_version,
@@ -336,12 +336,12 @@ class InstallOSKitReceiver:
                 self.kitops.addKit(kit, api=str(kit[4]))
                 retVal = True
             except (KitAlreadyInstalledError, InstallKitRPMError,
-                        ComponentAlreadyInstalledError,UnsupportedKitAPIError), e:
+                    ComponentAlreadyInstalledError,UnsupportedKitAPIError), e:
                 msg += "\nNot able to install the kit '%s': %s" % (kitname, e)
                 message.failure(msg, 0)
             except AssertionError:
-                msg += "\nThe inserted disk cannot be identified."
-                message.failure(msg,0)
+                msg += "\nThe inserted disk could not be recognized."
+                message.failure(msg, 0)
 
         self.kitops.unmountMedia()
         return retVal, msg
