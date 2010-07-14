@@ -105,7 +105,13 @@ class InitKusuDBReceiver(object):
         provision_network.device = provision_nic
         provision_network.suffix = "-%s" % provision_nic
         provision_network.netname = 'cluster'
-        provision_network.gateway = provision_nic_props['ip']
+
+        _default_gateway = netutil.findGateway()
+        if nicCheck.singleNicInstall and _default_gateway:
+            provision_network.gateway = _default_gateway
+        else:
+            provision_network.gateway = provision_nic_props['ip']
+
         provision_network.startip = provision_nic_props['ip']
         provision_network.type = 'provision'
         provision_network.save()
