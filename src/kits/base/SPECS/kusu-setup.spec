@@ -26,13 +26,15 @@ Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Source: %{name}-%{version}.%{release}.tar.gz
 BuildArch: noarch
-Requires: python pyparted createrepo
+Requires: python
 
 %description
 This package enables the bootstrap installation of KUSU.
 
 %prep
 %setup -n %{name} -q
+patch createrepo/src/bin/createrepo createrepo/custom/0.4.8/createrepo.patch
+patch createrepo/src/bin/modifyrepo createrepo/custom/0.4.8/modifyrepo.patch
 
 %build
 make nodeps
@@ -209,14 +211,12 @@ install -m644 kusu-repoman/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
 install -m644 kusu-driverpatch/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
 
-#for pulling in nodeinstaller-patchfiles
-install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
-install -d $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/bin
-install -m644 kusu-nodeinstaller-patchfiles/bin/downloader $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/bin
-install -m644 kusu-nodeinstaller-patchfiles/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
-
-cd kusu-nodeinstaller-patchfiles/; find src/ | cpio -mpdu $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/; cd ../
-install -m755 kusu-nodeinstaller-patchfiles/sbin/genupdatesimg.py $RPM_BUILD_ROOT/%{_kusu}/sbin/genupdatesimg
+# for pulling in createrepo
+install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/createrepo
+install -d $RPM_BUILD_ROOT/%{_kusu}/sbin
+install -m755 createrepo/src/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/createrepo
+install -m755 createrepo/src/bin/createrepo $RPM_BUILD_ROOT/%{_kusu}/sbin
+install -m755 createrepo/src/bin/modifyrepo $RPM_BUILD_ROOT/%{_kusu}/sbin
 
 %pre
 
@@ -259,14 +259,12 @@ rm -rf %{buildroot}
 # for kusu-path
 %{_kusu}/lib/python/path.py*
 
-# for node-installer-patchfiles
+# for createrepo
 %dir %{_kusu}/sbin
-%dir %{_kusu}/lib/nodeinstaller
-%dir %{_kusu}/lib/nodeinstaller/bin
-%dir %{_kusu}/lib/nodeinstaller/src
-%{_kusu}/lib/nodeinstaller/bin/*
-%{_kusu}/lib/nodeinstaller/src/*
-%{_kusu}/sbin/genupdatesimg
+%dir %{_kusu}/lib/python/createrepo
+%{_kusu}/lib/python/createrepo/*
+%{_kusu}/sbin/createrepo
+%{_kusu}/sbin/modifyrepo
 
 # for other kusu packages that were included in kusu-setup
 %{_kusu}/lib/python/kusu/*
