@@ -114,6 +114,18 @@ class InitKusuDBReceiver:
         provision_network.save()
         provision_network.flush()
 
+        if provision_network.device != 'eth0' and \
+                provision_network.device.startswith('eth') or \
+                provision_network.device.startswith('bond'):
+            provision_network_copy = self._db.Networks()
+            for col in provision_network.cols:
+                setattr(provision_network_copy, col, getattr(provision_network, col))
+            provision_network_copy.device = 'eth0'
+            provision_network_copy.netname = provision_network.netname + '-eth0'
+            provision_network_copy.suffix = '-eth0'
+            provision_network_copy.save()
+            provision_network_copy.flush()
+
         #Associate nodegroups with appropriate networks
         #public network with installer
         if not nicCheck.singleNicInstall:
