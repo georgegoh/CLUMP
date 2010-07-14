@@ -55,9 +55,6 @@ class KusuSetup:
         #add our sbin folder to pickup genupdatesimg
         os.environ['PATH'] = os.environ['PATH'] + ':/opt/kusu/bootstrap/sbin:'
 
-        #touch /var/lock/subsys/kusu-installer to skip genupdatesimg in repo.py
-        open('/var/lock/subsys/kusu-installer','w').close()
-
         #build up a PYTHONPATH so sub/shell processes have access to our libs
         os.environ['PYTHONPATH'] = ""
         for item in sys.path:
@@ -97,7 +94,7 @@ class KusuSetup:
     def runKusuRC(self):
         cmd=KUSURC_COMMAND
 
-        proc = subprocess.Popen(cmd,shell=True)
+        proc = subprocess.Popen(cmd, shell=True)
 
         retval = None
         #wait until kusurc completes
@@ -234,6 +231,7 @@ class KusuSetup:
             #refresh the repo
             print "Refreshing the repository [%s]. This will take a while..." % createOSRepo.default_repo_name
             self._repo = self._rfactory.getRepo(createOSRepo.default_repo_id)
+            self._repo.is_in_installer = True # makes Repo instance skip genupdatesimg
             self._repo.refresh(createOSRepo.default_repo_id)
 
             #Install Kusu RPMs from our local OS repo

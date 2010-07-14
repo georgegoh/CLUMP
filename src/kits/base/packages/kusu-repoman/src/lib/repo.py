@@ -43,18 +43,19 @@ class BaseRepo(object):
     repoid = None
     test = False
     ostype = None
-    
+
     def __init__(self, prefix, db, repos_root = '/depot/repos', kits_root = '/depot/kits', contrib_root='/depot/contrib'):
         self.prefix = prefix
         self.db = db
         self.provision = 'KUSU'
         self.repos_root = repos_root
-        self.kits_root = kits_root 
+        self.kits_root = kits_root
         self.contrib_root = contrib_root
+        self.is_in_installer = False
 
         row = self.db.AppGlobals.select_by(kname = 'DEPOT_REPOS_ROOT')
         if row: self.repos_root =  row[0].kvalue
-        
+
         row = self.db.AppGlobals.select_by(kname = 'DEPOT_KITS_ROOT')
         if row: self.kits_root =  row[0].kvalue
 
@@ -73,7 +74,7 @@ class BaseRepo(object):
 
         if type(repoid_or_reponame) in [int, long]:
             repo = self.db.Repos.get(repoid_or_reponame)
-    
+
         elif type(repoid_or_reponame) == str:
             repo = self.db.Repos.select_by(reponame=repoid_or_reponame)[0]
 
@@ -100,7 +101,7 @@ class BaseRepo(object):
 
     def getOSPath(self):
         """Get the OS path for the repository"""
-    
+
         repo = self.db.Repos.select_by(repoid = self.repoid)[0]
         return self.getKitPath(repo.oskit.kid)
 
@@ -113,7 +114,7 @@ class BaseRepo(object):
         """Get the kit path given the name, version and arch"""
 
         return self.prefix / self.kits_root / str(kid)
-       
+
     def getRepoPath(self, repoid = None):
         """Returns the repository path"""
 
@@ -124,7 +125,7 @@ class BaseRepo(object):
 
     def getRepoCachePath(self, repoid = None):
         """Returns the repository cache path"""
-        
+
         if repoid:
             return self.prefix / self.repos_root / '.repocache' / str(repoid)
         else:
@@ -137,25 +138,25 @@ class BaseRepo(object):
         masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
 
         return [nic.ip for nic in masterNode.nics if nic.ip]
-   
+
     def UpdateDatabase(self, ngname):
 
-        """Update the database with the new repository""" 
-       
+        """Update the database with the new repository"""
+
         ng = self.db.NodeGroups.select_by(ngname=ngname)[0]
- 
-        # Add new repo into table      
+
+        # Add new repo into table
         repo = self.db.Repos()
         repo.kits = self.getKits(ngname)
         repo.ostype = self.ostype
         repo.installers = ';'.join(self.getInstallerIP())
         repo.save()
         repo.flush()
-        
+
         repo.repository='/' + self.repos_root  + '/%s' % repo.repoid
         repo.save()
         repo.flush()
- 
+
         self.repoid = repo.repoid
 
         # Update nodegroup with the new repoid
@@ -167,26 +168,26 @@ class BaseRepo(object):
 
     def flushCache(self, repoid_or_reponame=None):
         """Remove the repository cache from local disk"""
-        
+
         cache_path = None
         if not self.repo_path:
             repoid = self.getRepoID(repoid_or_reponame)
-            
+
             if not repoid:
                 raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
             else:
                 cache_path = self.getRepoCachePath(repoid)
-        
+
         if not self.repo_path.exists():
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
         else:
             cache_path = self.getRepoCachePath()
-        
+
         if cache_path.exists(): cache_path.rmtree()
 
     def clean(self, repoid_or_reponame):
         """Remove the repository from local disk"""
-        
+
         if not self.repo_path:
             repoid = self.getRepoID(repoid_or_reponame)
 
@@ -194,7 +195,7 @@ class BaseRepo(object):
                 raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
             else:
                 self.repo_path = self.getRepoPath(repoid)
-         
+
         if not self.repo_path.exists():
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
         else:
@@ -240,7 +241,7 @@ class BaseRepo(object):
     def makeAutoInstallScript(self):
         """Make the autoinstall script for the repository"""
         raise NotImplementedError
- 
+
     def verify(self):
         """verify the repository"""
         raise NotImplementedError
@@ -268,7 +269,7 @@ class BaseRepo(object):
     def copyKitsPackages(self):
         """copy the kits packages to the repository"""
         raise NotImplementedError
-    
+
     def copyOSKit(self):
         """copy the OS kits packages to the repository"""
         raise NotImplementedError
@@ -292,7 +293,7 @@ class BaseRepo(object):
     def getPackageFilePath(self, packagename):
         """get the path to a package"""
         raise NotImplementedError
-        
+
     def getKernelPackages(self):
         """get a list of kernel packages"""
         raise NotImplementedError
@@ -302,9 +303,8 @@ class BaseRepo(object):
         raise NotImplementedError
 
     def isInInstaller(self):
-    
         flag = self.prefix / 'var' / 'lock' / 'subsys' /  'kusu-installer'
-        return flag.exists()
+        return flag.exists() or self.is_in_installer
 
     def hasBaseKit(self):
 
@@ -329,30 +329,30 @@ class BaseRepo(object):
             out, err = p.communicate()
             retcode = p.returncode
 
-        except: 
+        except:
             raise CommandFailedToRunError, 'genupdatesimg failed'
 
         if retcode:
             raise UpdatesImgNotCreatedError, 'Unable to create updates.img'
 
-        
+
 class SuseYastRepo(BaseRepo):
     """Base yast repository class"""
 
     def __init__(self, os_name, os_version, os_arch, prefix, db):
         BaseRepo.__init__(self, prefix, db)
-    
+
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
- 
+
         self.ostype = '%s-%s-%s' % (os_name, os_version, os_arch)
 
     def getEffectiveOSVersion(self):
         return self.os_version
 
     def getPackagesDir(self):
-        
+
         packagesDir = []
         for k, p in self.dirlayout.iteritems():
             if k.startswith('packagesdir'):
@@ -376,7 +376,7 @@ class SuseYastRepo(BaseRepo):
 
             if not pkgdir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
-   
+
             for file in pkgdir.listdir():
                 if file.isfile() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
 
@@ -387,7 +387,7 @@ class SuseYastRepo(BaseRepo):
                     if r_arch == 'x86_64' and self.os_arch in i386_family:
                         continue
 
-                    # We will be replacing the package from the os kit when 
+                    # We will be replacing the package from the os kit when
                     # it is provided by a kit
                     for rpmPkg in rpmPkgs:
                         if rpmPkg.has_key(name):
@@ -414,24 +414,24 @@ class SuseYastRepo(BaseRepo):
     def copyOSKit(self):
 
         self.os_path = self.getOSPath()
-        
+
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
-            
+
             if self.os_arch == 'i386' and (dir.endswith('suse/i386') or dir.endswith('suse/i486')):
-                    continue #default suse repo does not have these dir            
+                    continue #default suse repo does not have these dir
             elif self.os_arch == 'x86_64' and (dir.endswith('suse/i386') or dir.endswith('suse/i486') or dir.endswith('suse/i686')):
                     continue #default suse repo does not have these dir
 
             elif not dir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % dir
-             
+
         for key, dir in self.dirlayout.items():
             if self.os_arch == 'i386' and (dir.endswith('suse/i386') or dir.endswith('suse/i486')):
-                continue #default suse repo does not have these dir            
+                continue #default suse repo does not have these dir
             elif self.os_arch == 'x86_64' and (dir.endswith('suse/i386') or dir.endswith('suse/i486') or dir.endswith('suse/i686')):
-                continue #default suse repo does not have these dir            
+                continue #default suse repo does not have these dir
 
             for file in (self.os_path / dir).listdir():
                 if not file.isdir() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
@@ -440,22 +440,22 @@ class SuseYastRepo(BaseRepo):
 
         for file in ['content', 'content.asc', 'content.key', 'control.xml', 'directory.yast']:
             file = self.os_path / file
-    
-            if file.exists(): 
+
+            if file.exists():
                 dest = self.repo_path / file.basename()
                 file.copy(dest)
-       
+
         for file in ['root']:
             file = self.os_path / self.dirlayout['imagesdir'] / file
 
-            if file.exists(): 
+            if file.exists():
                 dest = self.repo_path / self.dirlayout['imagesdir'] / file.basename()
 
                 if dest.exists():
                     dest.remove()
 
                 file.copy(dest)
- 
+
         for file in (self.os_path / self.dirlayout['descrdir']).glob('packages*'):
             dest = self.repo_path / self.dirlayout['descrdir'] / file.basename()
 
@@ -470,15 +470,15 @@ class SuseYastRepo(BaseRepo):
 
         for file in ['media']:
             file = self.os_path / 'media.1' / file
-    
-            if file.exists(): 
+
+            if file.exists():
                 dest = self.repo_path / 'media.1' / file.basename()
 
                 if dest.exists():
                     dest.remove()
 
                 file.copy(dest)
- 
+
     def copyContribPackages(self):
 
         if not self.getContribPath().exists():
@@ -501,7 +501,7 @@ class SuseYastRepo(BaseRepo):
                 name = rpm.getName()
                 r_arch = rpm.getArch()
 
-                # We will be replacing the package from the os kit when 
+                # We will be replacing the package from the os kit when
                 # it is provided by a kit
                 for rpmPkg in rpmPkgs:
                     if rpmPkg.has_key(name):
@@ -519,7 +519,7 @@ class SuseYastRepo(BaseRepo):
 
                 if not (self.repo_path / self.dirlayout['packagesdir.' + r_arch]).exists():
                     (self.repo_path / self.dirlayout['packagesdir.' + r_arch]).makedirs()
-                   
+
                 dest = self.repo_path / self.dirlayout['packagesdir.' + r_arch] / file.basename()
                 (dest.parent.relpathto(file)).symlink(dest)
 
@@ -553,10 +553,10 @@ class SuseYastRepo(BaseRepo):
             if self.repoid: #repo have been inserted into database
                 repos_have_kits = self.db.ReposHaveKits.select_by(repoid = self.repoid)
                 repo = self.db.Repos.get(self.repoid)
-                
+
                 for obj in repos_have_kits + [repo]:
                     obj.delete()
-                    obj.flush()         
+                    obj.flush()
 
             if self.repo_path and self.repo_path.exists():
                 self.repo_path.rmtree()
@@ -571,7 +571,7 @@ class SuseYastRepo(BaseRepo):
         self.repoid = self.getRepoID(repoid_or_reponame)
         if not self.repoid:
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
-       
+
         self.clean(self.repoid)
         self.makeRepoDirs()
         self.markStale()
@@ -586,7 +586,7 @@ class SuseYastRepo(BaseRepo):
         return self
 
     def makeMetaInfo(self):
-        
+
         for p in [self.dirlayout['descrdir']]:
             md5sum = self.repo_path / p / 'MD5SUMS'
             if md5sum.exists():
@@ -594,7 +594,7 @@ class SuseYastRepo(BaseRepo):
 
         yastRepo = YastRepo(self.repo_path)
         yastRepo.make()
-        
+
         os_name, os_major, os_minor, os_arch = tools.getOS(self.db, self.repoid)
         yastRepo.writeMedia(vendor='Kusu %s-%s.%s-%s repository' % (os_name, os_major, os_minor, os_arch))
 
@@ -613,13 +613,13 @@ class SuseYastRepo(BaseRepo):
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
         if not kusu_root:
-            # path(/) / path('/opt/kusu') results in path('/opt/kusu'), 
+            # path(/) / path('/opt/kusu') results in path('/opt/kusu'),
             # since /opt/kusu is absolute
-            kusu_root = 'opt/kusu' 
+            kusu_root = 'opt/kusu'
 
         # Testing mode
         if self.test:
-            # ignore $KUSU_ROOT, since prefix is some random temp dir 
+            # ignore $KUSU_ROOT, since prefix is some random temp dir
             # during testing and updates.img will not be present.
             src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
@@ -636,10 +636,10 @@ class SuseYastRepo(BaseRepo):
 
             yastRepo = YastRepo(self.repo_path)
             yastRepo.handleUpdates('file://' + src)
-     
+
     def getKernelPackages(self):
         """get a list of kernel packages"""
-        
+
         pat = re.compile(r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
 
         kpkgs = []
@@ -657,13 +657,13 @@ class RedhatYumRepo(BaseRepo):
 
     def __init__(self, os_name, os_version, os_arch, prefix, db):
         BaseRepo.__init__(self, prefix, db)
-        
+
         self.yum_dirs = {'default' : ''}
-        
+
         self.os_name = os_name
         self.os_version = os_version
         self.os_arch = os_arch
- 
+
         self.ostype = '%s-%s-%s' % (os_name, os_version, os_arch)
 
     def getEffectiveOSVersion(self):
@@ -683,7 +683,7 @@ class RedhatYumRepo(BaseRepo):
 
             if not pkgdir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
-   
+
             for file in pkgdir.listdir():
                 if file.isfile() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
                     rpm = rpmtool.RPM(str(file))
@@ -693,7 +693,7 @@ class RedhatYumRepo(BaseRepo):
                     if arch == 'x86_64' and self.os_arch in i386_family:
                         continue
 
-                    # We will be replacing the package from the os kit when 
+                    # We will be replacing the package from the os kit when
                     # it is provided by a kit
                     if rpmPkgs.has_key(name):
                         if arch in i386_family:
@@ -706,23 +706,23 @@ class RedhatYumRepo(BaseRepo):
                             if rpmPkgs[name].has_key(arch):
                                 osFile = rpmPkgs[name][arch][0].getFilename()
                                 if osFile.exists(): osFile.remove()
-                        
+
                     dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
 
                     if dest.exists(): dest.remove()
-    
+
                     (dest.parent.relpathto(file)).symlink(dest)
 
     def copyOSKit(self):
 
         self.os_path = self.getOSPath()
-        
+
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
             if not dir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % dir
-             
+
         for key, dir in self.dirlayout.items():
             if key != 'repodatadir':
                for file in (self.os_path / dir).listdir():
@@ -733,7 +733,7 @@ class RedhatYumRepo(BaseRepo):
 
         discinfo = self.os_path / '.discinfo'
         if discinfo.exists():
-            dest = self.repo_path / '.discinfo' 
+            dest = self.repo_path / '.discinfo'
             (dest.parent.relpathto(discinfo)).symlink(dest)
 
     def copyContribPackages(self):
@@ -754,7 +754,7 @@ class RedhatYumRepo(BaseRepo):
             name = rpm.getName()
             arch = rpm.getArch()
 
-            # We will be replacing the package from the os kit when 
+            # We will be replacing the package from the os kit when
             # it is provided by a kit
             if rpmPkgs.has_key(name):
                 if arch in ['i386', 'i486', 'i586', 'i686']:
@@ -767,7 +767,7 @@ class RedhatYumRepo(BaseRepo):
                     if rpmPkgs[name].has_key(arch):
                         osFile = rpmPkgs[name][arch][0].getFilename()
                         if osFile.exists(): osFile.remove()
-                
+
             dest = self.repo_path / self.dirlayout['rpmsdir'] / file.basename()
 
             if dest.exists(): dest.remove()
@@ -785,7 +785,7 @@ class RedhatYumRepo(BaseRepo):
 
     def copyRamDisk(self):
         pass
-        
+
     def copyKusuNodeInstaller(self):
         """copy the kusu installer to the repository"""
 
@@ -798,20 +798,20 @@ class RedhatYumRepo(BaseRepo):
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
         if not kusu_root:
-            # path(/) / path('/opt/kusu') results in path('/opt/kusu'), 
+            # path(/) / path('/opt/kusu') results in path('/opt/kusu'),
             # since /opt/kusu is absolute
-            kusu_root = 'opt/kusu' 
+            kusu_root = 'opt/kusu'
 
         # Testing mode
         if self.test:
-            # ignore $KUSU_ROOT, since prefix is some random temp dir 
+            # ignore $KUSU_ROOT, since prefix is some random temp dir
             # during testing and updates.img will not be present.
             src = self.prefix / 'opt' / 'kusu' / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
         else:
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'updates.img'
-    
+
         dest = self.repo_path / self.dirlayout['imagesdir'] / 'updates.img'
 
         if self.hasBaseKit():
@@ -830,7 +830,7 @@ class RedhatYumRepo(BaseRepo):
         kusu_root = os.environ.get('KUSU_ROOT', None)
 
         if not kusu_root:
-            kusu_root = 'opt/kusu' 
+            kusu_root = 'opt/kusu'
 
         # Testing mode
         if self.test:
@@ -839,14 +839,14 @@ class RedhatYumRepo(BaseRepo):
         else:
             src = self.prefix / kusu_root / 'lib' / 'nodeinstaller' / \
                   self.os_name / self.os_version / self.os_arch / 'ks.cfg.tmpl'
- 
+
         if not src.exists():
             return
 
         row = self.db.AppGlobals.select_by(kname = 'PrimaryInstaller')
         row = row[0]
         masterNode = self.db.Nodes.select_by(name=row.kvalue)[0]
-        
+
         for nic in masterNode.nics:
             # Ignore any unconfigured nic
             if not nic.ip:
@@ -860,7 +860,7 @@ class RedhatYumRepo(BaseRepo):
                 # web server root is different: /repos/<repoid>
                 f = open(dest, 'w')
                 try:
-                    t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': 'repos/' + str(self.repoid)}])  
+                    t = Template(file=str(src), searchList=[{'niihost': niihost, 'repodir': 'repos/' + str(self.repoid)}])
                 except:
                     f.close()
                     raise UnableToGenerateFileFromTemplateError, 'Cannot create \'%s\'' % dest
@@ -894,10 +894,10 @@ class RedhatYumRepo(BaseRepo):
             if self.repoid: #repo have been inserted into database
                 repos_have_kits = self.db.ReposHaveKits.select_by(repoid = self.repoid)
                 repo = self.db.Repos.get(self.repoid)
-                
+
                 for obj in repos_have_kits + [repo]:
                     obj.delete()
-                    obj.flush()         
+                    obj.flush()
 
             if self.repo_path and self.repo_path.exists():
                 self.repo_path.rmtree()
@@ -912,7 +912,7 @@ class RedhatYumRepo(BaseRepo):
         self.repoid = self.getRepoID(repoid_or_reponame)
         if not self.repoid:
             raise RepoNotCreatedError, 'Repo: \'%s\' not created' % repoid_or_reponame
-       
+
         try:
             self.clean(self.repoid)
             self.makeRepoDirs()
@@ -960,19 +960,19 @@ class RedhatYumRepo(BaseRepo):
             out, err = p.communicate()
             retcode = p.returncode
 
-        except: 
+        except:
             if repocache_path.exists(): repocache_path.rmtree()
-            
+
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
             if repocache_path.exists(): repocache_path.rmtree()
- 
+
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
     def getKernelPackages(self):
         """get a list of kernel packages"""
-        
+
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
 
         kpkgs = []
@@ -1023,7 +1023,7 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / 'core' / 'updates' / '6' / self.os_arch )
 
         return [updates]
-    
+
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
 
@@ -1034,12 +1034,12 @@ class Fedora6Repo(RedhatYumRepo, YumUpdate):
 
     def getPackagesDir(self):
         return [self.repo_path / self.dirlayout['rpmsdir']]
- 
+
 class Centos5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'centos', '5', os_arch, prefix, db)
         YumUpdate.__init__(self, 'centos', '5', os_arch, prefix, db)
-        
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
@@ -1050,7 +1050,7 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
 
         kits = self.db.Kits.select_by(rname=self.os_name,
                                       arch=self.os_arch)
-        
+
         if not kits:
             return []
 
@@ -1075,9 +1075,9 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
 
         os = str(baseurl / '5' / 'os' / self.os_arch)
         updates = str(baseurl / '5' / 'updates' / self.os_arch)
-        
+
         return [os,updates]
-    
+
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
 
@@ -1088,12 +1088,12 @@ class Centos5Repo(RedhatYumRepo, YumUpdate):
 
     def getPackagesDir(self):
         return [self.repo_path / self.dirlayout['rpmsdir']]
- 
+
 class Fedora7Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'fedora', '7', os_arch, prefix, db)
         YumUpdate.__init__(self, 'fedora', '7', os_arch, prefix, db)
-        
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['repodatadir'] = 'repodata'
         self.dirlayout['imagesdir'] = 'images'
@@ -1135,7 +1135,7 @@ class Fedora7Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / 'updates' / '7' / self.os_arch )
 
         return [updates]
-    
+
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
 
@@ -1146,17 +1146,17 @@ class Fedora7Repo(RedhatYumRepo, YumUpdate):
 
     def getPackagesDir(self):
         return [self.repo_path / self.dirlayout['rpmsdir']]
- 
+
 class Redhat5Repo(RedhatYumRepo, RHNUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'rhel', '5', os_arch, prefix, db)
         RHNUpdate.__init__(self, '5', os_arch, prefix, db)
-        
+
         self.yum_dirs['default'] = 'Server'
         self.yum_dirs['server'] = 'Server'
         self.yum_dirs['cluster'] = 'Cluster'
         self.yum_dirs['clusterstorage'] = 'ClusterStorage'
-        
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
@@ -1170,7 +1170,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
         self.dirlayout['vt.repodatadir'] = 'VT/repodata'
 
     def getSources(self):
-        
+
         # FIXME: does not work correctly because of kit name changes
         kits = self.db.Kits.select_by(rname=self.os_name,
                                       arch=self.os_arch)
@@ -1185,7 +1185,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                 min_version = kit.os.minor
                 kid = kit.kid
 
-        return [self.getKitPath(kid) / p 
+        return [self.getKitPath(kid) / p
                 for p in [self.dirlayout['server.rpmsdir'],
                           self.dirlayout['cluster.rpmsdir'],
                           self.dirlayout['clusterstorage.rpmsdir'],
@@ -1196,7 +1196,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
         kits = self.db.Kits.select_by(self.db.ReposHaveKits.c.repoid==self.repoid,
                                       self.db.ReposHaveKits.c.kid == self.db.Kits.c.kid,
                                       self.db.Kits.c.isOS==False)
-        i386_family = ['i386', 'i486', 'i586', 'i686'] 
+        i386_family = ['i386', 'i486', 'i586', 'i686']
 
         rpmPkgs = [rpmtool.getLatestRPM([self.repo_path / self.dirlayout['server.rpmsdir']]),
                    rpmtool.getLatestRPM([self.repo_path / self.dirlayout['cluster.rpmsdir']]),
@@ -1208,7 +1208,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
             if not pkgdir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % pkgdir
-   
+
             for file in pkgdir.listdir():
                 if file.isfile() and file.basename() not in ['TRANS.TBL', 'kitinfo']:
 
@@ -1219,7 +1219,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                     if arch == 'x86_64' and self.os_arch in i386_family:
                         continue
 
-                    # We will be replacing the package from the os kit when 
+                    # We will be replacing the package from the os kit when
                     # it is provided by a kit
                     for rpmPkg in rpmPkgs:
                         if rpmPkg.has_key(name):
@@ -1243,13 +1243,13 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
     def copyOSKit(self):
 
         self.os_path = self.getOSPath()
-        
+
         # Validate OS layout
         for dir in self.dirlayout.values():
             dir = self.os_path / dir
             if not dir.exists():
                 raise InvalidPathError, 'Path \'%s\' not found' % dir
-             
+
         for key, dir in self.dirlayout.items():
             if key != 'server.repodatadir':
                 for file in (self.os_path / dir).listdir():
@@ -1259,7 +1259,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
         discinfo = self.os_path / '.discinfo'
         if discinfo.exists():
-            dest = self.repo_path / '.discinfo' 
+            dest = self.repo_path / '.discinfo'
             (dest.parent.relpathto(discinfo)).symlink(dest)
 
     def copyContribPackages(self):
@@ -1286,7 +1286,7 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
                 name = rpm.getName()
                 arch = rpm.getArch()
 
-                # We will be replacing the package from the os kit when 
+                # We will be replacing the package from the os kit when
                 # it is provided by a kit
                 for rpmPkg in rpmPkgs:
                     if rpmPkg.has_key(name):
@@ -1339,14 +1339,14 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
         except:
             if repocache_path.exists(): repocache_path.rmtree()
- 
+
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
             if repocache_path.exists(): repocache_path.rmtree()
- 
+
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
-    
+
     def getPackageFilePath(self, packagename):
 
         for dirlayout in [self.dirlayout['server.rpmsdir'],
@@ -1357,27 +1357,27 @@ class Redhat5Repo(RedhatYumRepo, RHNUpdate):
 
             if p.exists():
                 return p
- 
-        return None 
+
+        return None
 
     def getPackagesDir(self):
         return [self.repo_path / self.dirlayout['server.rpmsdir']]
- 
+
 class SLES10Repo(SuseYastRepo, YouUpdate):
     def __init__(self, os_arch, prefix, db):
         SuseYastRepo.__init__(self, 'sles', '10', os_arch, prefix, db)
         YouUpdate.__init__(self, '10', os_arch, prefix, db)
-            
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['bootdir'] = 'boot'
         self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
-        self.dirlayout['mediadir'] = 'media.1' 
+        self.dirlayout['mediadir'] = 'media.1'
         self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
-        self.dirlayout['descrdir'] = 'suse/setup/descr' 
+        self.dirlayout['descrdir'] = 'suse/setup/descr'
         self.dirlayout['patchesdir'] = 'patches/repodata'
         self.dirlayout['docdudir'] = 'docu'
-        
-        self.dirlayout['packagesdir.noarch'] = 'suse/noarch' 
+
+        self.dirlayout['packagesdir.noarch'] = 'suse/noarch'
         self.dirlayout['packagesdir.i386'] = 'suse/i386';
         self.dirlayout['packagesdir.i486'] = 'suse/i486';
         self.dirlayout['packagesdir.i586'] = 'suse/i586';
@@ -1386,7 +1386,7 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
             self.dirlayout['packagesdir.x86_64'] = 'suse/x86_64';
 
     def getSources(self):
-        
+
         return [self.getRepoPath()]
 
     def getPackageFilePath(self, packagename):
@@ -1398,7 +1398,7 @@ class SLES10Repo(SuseYastRepo, YouUpdate):
                 return p
 
         return None
-    
+
     def makeAutoInstallScript(self):
         """Make the autoinstall script for the repository"""
         pass #SLES nodeinstaller does not require fake autoinst.xml
@@ -1407,16 +1407,16 @@ class OpenSUSE103Repo(SuseYastRepo, OpenSUSEUpdate):
     def __init__(self, os_arch, prefix, db):
         SuseYastRepo.__init__(self, 'opensuse', '10.3', os_arch, prefix, db)
         OpenSUSEUpdate.__init__(self, '10.3', os_arch, prefix, db)
-            
+
         # FIXME: Need to use a common lib later, maybe boot-media-tool
         self.dirlayout['bootdir'] = 'boot'
         self.dirlayout['imagesdir'] = 'boot/%s'  % self.os_arch
-        self.dirlayout['mediadir'] = 'media.1' 
+        self.dirlayout['mediadir'] = 'media.1'
         self.dirlayout['isolinuxdir'] = 'boot/%s/loader' % self.os_arch
-        self.dirlayout['descrdir'] = 'suse/setup/descr' 
+        self.dirlayout['descrdir'] = 'suse/setup/descr'
         self.dirlayout['docdudir'] = 'docu'
-        
-        self.dirlayout['packagesdir.noarch'] = 'suse/noarch' 
+
+        self.dirlayout['packagesdir.noarch'] = 'suse/noarch'
         self.dirlayout['packagesdir.i386'] = 'suse/i386';
         self.dirlayout['packagesdir.i486'] = 'suse/i486';
         self.dirlayout['packagesdir.i586'] = 'suse/i586';
@@ -1442,7 +1442,7 @@ class OpenSUSE103Repo(SuseYastRepo, OpenSUSEUpdate):
         update = str(baseurl / 'update' / '10.3')
 
         return [update]
- 
+
     def getPackageFilePath(self, packagename):
 
         for dirlayout in self.getPackagesDir():
@@ -1451,10 +1451,10 @@ class OpenSUSE103Repo(SuseYastRepo, OpenSUSEUpdate):
             if p.exists():
                 return p
 
-        return None 
+        return None
 
     def makeMetaInfo(self):
-        
+
         for p in [self.dirlayout['descrdir']]:
             md5sum = self.repo_path / p / 'MD5SUMS'
             if md5sum.exists():
@@ -1466,8 +1466,8 @@ class OpenSUSE103Repo(SuseYastRepo, OpenSUSEUpdate):
 
         for file in ['content.asc', 'content.key']:
             file = self.os_path / file
-    
-            if file.exists(): 
+
+            if file.exists():
                 dest = self.repo_path / file.basename()
                 file.copy(dest)
 
@@ -1480,7 +1480,7 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
     def __init__(self, os_arch, prefix, db):
         RedhatYumRepo.__init__(self, 'scientificlinux', '5', os_arch, prefix, db)
         YumUpdate.__init__(self, 'scientificlinux', '5', os_arch, prefix, db)
-        
+
         self.yum_dirs['default'] = 'SL'
 
         # FIXME: Need to use a common lib later, maybe boot-media-tool
@@ -1488,7 +1488,7 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
         self.dirlayout['imagesdir'] = 'images'
         self.dirlayout['isolinuxdir'] = 'isolinux'
         self.dirlayout['rpmsdir'] = 'SL'
- 
+
     def getOSMajorVersion(self, os_version):
         """Returns the major number"""
         return os_version.split('.')[0]
@@ -1497,7 +1497,7 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
 
         kits = self.db.Kits.select_by(rname=self.os_name,
                                       arch=self.os_arch)
-        
+
         if not kits:
             return []
 
@@ -1518,9 +1518,9 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
                 baseurl = path(cfg['scientificlinux']['url'])
         os = str(baseurl / '5x' / self.os_arch / 'SL')
         updates = str(baseurl / '5x' / self.os_arch / 'updates' / 'security')
-        
+
         return [os,updates]
-    
+
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
 
@@ -1559,16 +1559,16 @@ class ScientificLinux5Repo(RedhatYumRepo, YumUpdate):
             out, err = p.communicate()
             retcode = p.returncode
 
-        except: 
+        except:
             if dotrepodata.exists():
                 dotrepodata.rmtree()
-            
+
             raise CommandFailedToRunError, 'createrepo failed'
 
         if retcode:
             if dotrepodata.exists():
                 dotrepodata.rmtree()
- 
+
             kl.error('Unable to create repo at: %s Reason: %s' % (self.repo_path, err))
             raise YumRepoNotCreatedError, 'Unable to create repo at \'%s\'' % self.repo_path
 
@@ -1618,7 +1618,7 @@ class ScientificLinuxCern5Repo(RedhatYumRepo, YumUpdate):
         updates = str(baseurl / 'slc5X' / 'updates' / self.os_arch / 'RPMS')
 
         return [os,updates]
-   
+
     def getPackageFilePath(self, packagename):
         p = (self.repo_path / self.dirlayout['rpmsdir'] / packagename)
 
@@ -1674,4 +1674,4 @@ class ScientificLinuxCern5Repo(RedhatYumRepo, YumUpdate):
             raise YumRepoNotCreatedError, 'Retcode: %s :: Out: %s :: Error: %s :: Unable to create repo at \'%s\'' % (retcode,out,err, self.repo_path)
 
     def getPackagesDir(self):
-        return [self.repo_path / self.dirlayout['rpmsdir']] 
+        return [self.repo_path / self.dirlayout['rpmsdir']]
