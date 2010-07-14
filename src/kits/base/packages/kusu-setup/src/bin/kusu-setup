@@ -89,7 +89,7 @@ class KusuSetup(object):
             cleanupCommand.execute()
 
     def runKusuRC(self):
-        cmd=KUSURC_COMMAND
+        cmd = KUSURC_COMMAND
 
         proc = subprocess.Popen(cmd, shell=True)
 
@@ -240,7 +240,7 @@ class KusuSetup(object):
                 sys.exit(1)
 
             ##Run all the kusurc scripts
-            message.display("\nRunning kusurc scripts to finalize installation.")
+            message.display("\nRunning kusurc scripts to finalize installation.\n")
             self.runKusuRC()
 
             self._installCompleted = True
