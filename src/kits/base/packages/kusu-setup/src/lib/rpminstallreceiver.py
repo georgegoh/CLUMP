@@ -20,7 +20,9 @@
 
 import os, tempfile
 from path import path
+from primitive.support import osfamily
 from primitive.support.rpmtool import RPM
+from primitive.system.software.dispatcher import Dispatcher
 from kusu.kitops.kitops import KitOps
 from bootstrap.setup.installerinitreceiver import InstallerInitReceiver
 
@@ -32,24 +34,11 @@ except:
     from popen5 import subprocess
 
 FIND_COMMAND = 'find -P %s -name kit-base*.rpm'
-SUPPORTED_DISTROS = ['rhel', 'centos']
 
 class RpmInstallReceiver:
+
     def __init__(self):
-
-        self._rhel_repoTemplate = '''[bootstraprepo]
-name=BootstrapRepo
-baseurl=file://///depot/repos/%s/Server
-enabled=1
-gpgcheck=0
-'''
-
-        self._centos_repoTemplate = '''[bootstraprepo]
-name=BootstrapRepo
-baseurl=file://///depot/repos/%s
-enabled=1
-gpgcheck=0
-'''
+        pass
 
     def installRPMs(self, repoid):
         """
@@ -57,20 +46,22 @@ gpgcheck=0
         """
 
         name, ver, arch = softprobe.OS()
-
         distro = name.lower()
 
-        if distro == 'rhel':
-            repoText = self._rhel_repoTemplate % repoid
-        elif distro == 'centos':
-            repoText = self._centos_repoTemplate % repoid
+        self._repoTemplate = '''[bootstraprepo]
+name=BootstrapRepo
+baseurl=file://///depot/repos/%s%s
+enabled=1
+gpgcheck=0
+'''
+        repoText = self._repoTemplate % (repoid, Dispatcher.get('yum_repo_subdir', ''))
 
         #generate a tempfile for our yum config
         yum_file = tempfile.NamedTemporaryFile(mode='w')
         yum_file.file.writelines(repoText)
         yum_file.flush()
 
-        yumCmd = subprocess.Popen("yum -c %s --disablerepo='*' --enablerepo='bootstraprepo' -y install component-base-installer component-base-node component-gnome-desktop" % yum_file.name, shell=True, stdout=subprocess.PIPE)
+        yumCmd = subprocess.Popen("yum -c %s -y install component-base-installer component-base-node component-gnome-desktop" % yum_file.name, shell=True, stdout=subprocess.PIPE)
         result, code = yumCmd.communicate()
 
         yum_file.close()
@@ -107,5 +98,6 @@ gpgcheck=0
             base_os = kit_info_component[0]['os']
             base_os_name = base_os[0]['name']
             installer = InstallerInitReceiver()
-            if installer.distroName.lower() in SUPPORTED_DISTROS and base_os_name == 'rhelfamily':
+            if installer.distroName.lower() in osfamily.getOSNames('rhelfamily') and base_os_name == 'rhelfamily':
                 return True
+        return False
