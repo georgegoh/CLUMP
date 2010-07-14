@@ -30,48 +30,45 @@ import kusu.util.log as kusulog
 kl = kusulog.getKusuLog()
 
 def display(desc):
-    ignore_first_print = 1
+    ignore_first_newline = True
     for msg in desc.split('\n'):
-        if not ignore_first_print:
+        if not ignore_first_newline:
             print
-        print '%s%s' % (' '*3, msg or ''),
+        print '\r%s%s' % (' '*3, msg or ''),
         sys.stdout.flush()
-        ignore_first_print = 0
+        ignore_first_newline = False
 
 def input(desc):
     if desc:
         display(desc)
     return raw_input()
 
-def print_log_msg(cmd):
-    runP = subprocess.Popen(cmd,
-                                shell=True, stdout=subprocess.PIPE)
-    out = runP.stdout.readlines()
-    if out:
-        print out[0].rstrip()
+def display_status(cmd):
+    runP = subprocess.Popen(cmd, shell=True)
+    runP.communicate()
 
-def failure(msg=None, print_status=1 ):
+def failure(msg=None, print_status=True):
     if msg:
         kl.error(msg)
 
     if print_status:
         cmd = 'source /lib/lsb/init-functions && log_failure_msg "$@"'
-        print_log_msg(cmd)
+        display_status(cmd)
 
-def success(msg=None, print_status=1):
+def success(msg=None, print_status=True):
     if msg:
         kl.info(msg)
         display(msg)
 
     if print_status:
         cmd = 'source /lib/lsb/init-functions && log_success_msg "$@"'
-        print_log_msg(cmd)
+        display_status(cmd)
 
-def warning(msg=None, print_status=1):
+def warning(msg=None, print_status=True):
     if msg:
         kl.warning(msg)
         display(msg)
 
     if print_status:
         cmd = 'source /lib/lsb/init-functions && log_warning_msg "$@"'
-        print_log_msg(cmd)
+        display_status(cmd)
