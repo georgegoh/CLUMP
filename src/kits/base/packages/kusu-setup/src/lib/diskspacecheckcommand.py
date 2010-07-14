@@ -32,7 +32,7 @@ class DiskSpaceCheckCommand(Command):
         message.display("\nSelect one of the following mountpoints where kusu should place it's '/depot' folder:")
         count = 1
         for (mountpoint, size) in partitions:
-            message.display("\n\t %d) \t MountPoint: '%s' FreeSpace: '%sB' " %(count, mountpoint, size))
+            message.display("\n\t %d) MountPoint: '%s' FreeSpace: '%sB' " %(count, mountpoint, size))
             count += 1
 
     def execute(self):

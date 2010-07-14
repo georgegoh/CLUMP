@@ -28,7 +28,6 @@ except:
 import kusu.util.log as kusulog
 
 kl = kusulog.getKusuLog()
-kl.addFileHandler('/var/log/kusu/kusu-setup.log')
 
 def display(desc):
     ignore_first_print = 1
@@ -42,7 +41,7 @@ def display(desc):
 def input(desc):
     if desc:
         display(desc)
-        return raw_input()
+    return raw_input()
 
 def print_log_msg(cmd):
     runP = subprocess.Popen(cmd,

@@ -337,7 +337,7 @@ class InstallOSKitReceiver:
                 retVal = True
             except (KitAlreadyInstalledError, InstallKitRPMError,
                         ComponentAlreadyInstalledError,UnsupportedKitAPIError), e:
-                msg += "\nInstallation of the kit '%s' + failed: %s" % (kitname, e)
+                msg += "\nInstallation of the kit '%s' failed %s" % (kitname, e)
                 message.failure(msg, 0)
             except AssertionError:
                 msg += "\nThe inserted disk could not be identified."
@@ -419,11 +419,13 @@ class InstallOSKitReceiver:
         """ Finds and returns the kits that are not compatible with the OS kit."""
 
         incompatible = []
-        kit_lits = self.kitops.listKit()
-        os = [kit for kit in kit_lits if kit.isOS]
+        kit_list = self.kitops.listKit()
+        os = [kit for kit in kit_list if kit.isOS]
         if os:
-           self.os_kit = os[0]
-        for kit in self.kitops.listKit():
+            self.os_kit = os[0]
+        else:
+            return incompatible
+        for kit in kit_list:
             if kit.isOS:
                 continue
             components = self.kitops.getKitComponents(kit.kid, self.os_kit.os)

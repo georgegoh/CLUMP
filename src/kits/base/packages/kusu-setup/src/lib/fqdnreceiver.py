@@ -45,42 +45,12 @@ class FQDNReceiver(object):
         return self._verify_fqdn(self.pub_domain)
 
     def _verify_fqdn(self, fqdn):
-
        if not verifyFQDN(fqdn):
            fqdn_probed = False
        else:
            fqdn_probed = True
 
        return fqdn_probed
-
-    def _probe_fqdn(self, ip):
-
-        if not path(HOSTS).exists():
-            fqdn_probed = False
-        else:
-            fqdn_probed = self._read_hosts()
-
-        if not fqdn_probed:
-            message.display("\nKusu Setup failed to discover Fully Qualified Domain Name (FQDN) for provision interface.")
-            self._prompt_for_fqdn(network_type)
-
-        return True
-
-    def _read_hosts(self):
-
-        fp = open(HOSTS, 'r')
-        for line in fp.readlines():
-            line = line.strip()
-            if line.startswith('#'):
-                continue
-            if ip is None or not line.find(ip) < 0:
-                values = line.split()
-                self.prov_domain = values[1].split('.', 1)[-1]
-                break
-
-        fp.close()
-
-        return self._verify_fqdn(self.prov_domain)
 
     def get_fqdn(self):
         """ Interface to expose the provision and public domains. """

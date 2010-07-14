@@ -70,10 +70,8 @@ class KusuSetup:
 
         self._cleanupReceiver = cleanupreceiver.CleanupReceiver()
         self._installerInitReceiver = installerinitreceiver.InstallerInitReceiver()
-        self._systemSettingsReceiver = systemsettingsreceiver.SystemSettingsReceiver()
         self._ramCheckReceiver = ramcheckreceiver.RamCheckReceiver()
 
-        self._installExtraKitReceiver = installextrakitreceiver.InstallExtraKitReceiver()
         self._diskSpaceCheckReceiver = diskspacecheckreceiver.DiskSpaceCheckReceiver()
         self._rpmInstallReceiver = rpminstallreceiver.RpmInstallReceiver()
 

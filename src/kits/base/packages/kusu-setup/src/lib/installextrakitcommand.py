@@ -34,9 +34,14 @@ class InstallExtraKitCommand(Command):
 
     def _prompt_for_additional_kit(self):
 
+        input_msg = "\nChoose one of the following:" +\
+               "\n[A]dd kit" +\
+               "\n[D]elete kit" +\
+               "\n[C]ontinue" +\
+               "\n>>"
         while True:
-            value = message.input('\nDo you want to add/delete kits [1|2|N]: ').strip()
-            if value in ['1']:
+            value = message.input(input_msg).strip()
+            if value.lower() in ['a']:
                 try:
                     value = int(message.input('\nSelect the kit media to add the kit from: \n'
                                           '1)\tCD/DVD drive \n'
@@ -59,14 +64,14 @@ class InstallExtraKitCommand(Command):
                 else:
                     message.display("Invalid option is given.")
                     continue
-            elif value in ['2']:
+            elif value.lower() in ['d']:
                 status, msg =  self._receiver.delete_kits()
                 if not status:
                     message.display(msg)
-            elif value.lower() in ['n', 'no']:
+            elif value.lower() in ['c', '']:
                 break
             else:
-                message.display("Wrong Input enter [Y|N]")
+                message.display("Wrong Input enter [A|D|C]")
                 continue
 
         kits = []
@@ -74,6 +79,7 @@ class InstallExtraKitCommand(Command):
         if kits:
             message.warning(msg, 0)
             message.display('\nKusu setup is removing the incompatible kits')
-            self._receiver.delete_kits(kits) 
-  
+            self._receiver.delete_kits(kits)
+            self._prompt_for_additional_kit()
+
         self._proceedStatus = True
