@@ -32,17 +32,17 @@ class EnvCheckCommand(Command):
 
         super(EnvCheckCommand, self).__init__()
 
-        (self._prov_interface, self._prov_interface_props) = provisioningInterfaceTuple
+        self._prov_interface, self._prov_interface_props = provisioningInterfaceTuple
 
         if publicInterfaceTuple is not None:
-            (self._pub_interface, self._pub_interface_props) = publicInterfaceTuple
+            self._pub_interface, self._pub_interface_props = publicInterfaceTuple
 
         self._fqdn_receiver = fqdn_receiver
 
     def execute(self):
 
         try:
-            (self.prov_fqdn, self.pub_fqdn) = self._fqdn_receiver.fqdn
+            self.prov_fqdn, self.pub_fqdn = self._fqdn_receiver.fqdn
             self._proceedStatus = True
 
         except KusuProbePluginError, msg:

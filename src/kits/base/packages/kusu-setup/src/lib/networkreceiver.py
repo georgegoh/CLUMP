@@ -39,7 +39,6 @@ SLESFAMILY_NETWORKFILE_PATH = '/etc/sysconfig/network/'
 class NetworkReceiver(object):
 
     def __init__(self, distroName):
-        super(NetworkReceiver, self).__init__()
         self._distro = distroName
         self.servingDhcp = None
         self.intf = None

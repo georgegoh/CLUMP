@@ -40,12 +40,11 @@ try:
 except:
     from popen5 import subprocess
 
-class InstallOSKitReceiver:
+class InstallOSKitReceiver(object):
     """
     This class prompts for, and installs the OS kit.
     """
-    def __init__(self, kusu_db ):
-
+    def __init__(self, kusu_db):
         self._db = kusu_db
         self.os_kit = None
         self.kitops = KitOps(installer=True)
@@ -111,7 +110,6 @@ class InstallOSKitReceiver:
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
         return p.communicate()
-
 
     def verifyDistroVersionAndArch(self, distro):
         """

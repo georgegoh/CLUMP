@@ -23,6 +23,7 @@ import message
 
 class CleanupCommand(Command):
     def __init__(self, receiver):
+        super(CleanupCommand, self).__init__()
         self._receiver = receiver
 
     def execute(self):

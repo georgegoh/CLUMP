@@ -28,7 +28,8 @@ class SystemSettingsCommand(Command):
     """
     This is the command class for checking system settings.
     """
-    def __init__(self, networkReceiver, kb_receiver, locale_receiver, timezone_receiver, fqdn_receiver, diskspace_receiver):
+    def __init__(self, networkReceiver, kb_receiver, locale_receiver,
+            timezone_receiver, fqdn_receiver, diskspace_receiver):
         super(SystemSettingsCommand, self).__init__()
         self._networkReceiver = networkReceiver
 
@@ -55,7 +56,8 @@ class SystemSettingsCommand(Command):
 
         interfaces, properties = self._networkReceiver.physicalInterfacesAndProperties
 
-        #iterate over all the interfaces, validating at least 2 static, configured interfaces
+        #iterate over all the interfaces, validating at least
+        #2 static, configured interfaces
         message.display("Checking for at least 1 configured NIC")
         ipCount=0
         for interface in interfaces:

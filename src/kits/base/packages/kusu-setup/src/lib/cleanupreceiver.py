@@ -57,7 +57,7 @@ KUSU_RPM_LIST = [
 'kusu-nodeinstaller-patchfiles'
 ]
 
-class CleanupReceiver:
+class CleanupReceiver(object):
     """
        This class performs cleanup/sanitization of environment before bootstrap is run or re-run.
     """

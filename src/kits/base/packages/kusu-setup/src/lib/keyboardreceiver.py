@@ -33,8 +33,7 @@ KEYBOARD_FILE = '/etc/sysconfig/keyboard'
 
 class KeyboardReceiver(object):
 
-    def __init__(self, args=None):
-        super(KeyboardReceiver, self).__init__()
+    def __init__(self):
         self.keyboard_layout = None
 
     def probe_keyboard(self):

@@ -34,23 +34,13 @@ HOSTS = '/etc/hosts'
 class FQDNReceiver(object):
 
     def __init__(self):
-        super(FQDNReceiver, self).__init__()
         self.hostname = ''
         self.prov_domain = None
         self.pub_domain = None
 
     def pub_dns_discover(self):
-
         self.pub_domain = socket.gethostname()
-        return self._verify_fqdn(self.pub_domain)
-
-    def _verify_fqdn(self, fqdn):
-       if not verifyFQDN(fqdn):
-           fqdn_probed = False
-       else:
-           fqdn_probed = True
-
-       return fqdn_probed
+        return verifyFQDN(self.pub_domain)
 
     def get_fqdn(self):
         """ Interface to expose the provision and public domains. """
@@ -60,7 +50,8 @@ class FQDNReceiver(object):
     def _prompt_for_fqdn(self):
         st = False
         while not st:
-            self.prov_domain = message.input("\nSpecify private cluster domain (example private.dns.zone):")
+            self.prov_domain = message.input("\nSpecify private cluster domain "
+                                             "(example private.dns.zone):")
 
             st, msg = verifyFQDN(self.prov_domain)
             if msg:

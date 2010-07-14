@@ -28,6 +28,7 @@ class RamCheckCommand(Command):
     This is the command class for checking requisite amount of RAM in the system.
     """
     def __init__(self, receiver):
+        super(RamCheckCommand, self).__init__()
         self._receiver = receiver
 
     def execute(self):

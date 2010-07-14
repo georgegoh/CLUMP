@@ -33,7 +33,6 @@ LOCALE_CMD = '/usr/bin/locale '
 class LanguageReceiver(object):
 
     def __init__(self):
-        super(LanguageReceiver, self).__init__()
         self._language = ''
 
     def probe_locale(self):

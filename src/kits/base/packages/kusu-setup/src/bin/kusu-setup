@@ -42,7 +42,7 @@ except:
 
 KUSURC_COMMAND = ". /opt/kusu/bin/kusuenv.sh; /opt/kusu/bin/kusurc"
 
-class KusuSetup:
+class KusuSetup(object):
 
     def __init__(self):
         #set KUSU_DIST environment so db bootstrap works

@@ -60,8 +60,7 @@ def convert_to_megabytes(number, pattern=''):
 
 class DiskSpaceCheckReceiver(object):
 
-    def __init__(self, args=None):
-        super(DiskSpaceCheckReceiver, self).__init__()
+    def __init__(self):
         self._depot_present = False
         self._partition_dir= {}
 
@@ -71,9 +70,9 @@ class DiskSpaceCheckReceiver(object):
             return False
 
         cmd = MOUNT_COMMAND + '/depot'
-        sshP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out,err = sshP.communicate()
-        if sshP.returncode:
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if p.returncode:
             return False
 
         return True
@@ -81,8 +80,8 @@ class DiskSpaceCheckReceiver(object):
     def is_depot_valid_installdir(self):
 
         cmd = DF_COMMAND + '/depot'
-        sshP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out,err = sshP.communicate()
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
         if out:
             self._partition_dir = self._process_df_output(out)
             if len(self._partition_dir) < 1:
@@ -96,9 +95,9 @@ class DiskSpaceCheckReceiver(object):
             return self._partition_dir
 
         cmd = DF_COMMAND
-        sshP = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out,err = sshP.communicate()
-        if sshP.returncode:
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if p.returncode:
             raise KusuProbePluginError, 'Partition probe failed'
 
         if out:
@@ -131,7 +130,7 @@ class DiskSpaceCheckReceiver(object):
 
     def prepareDepotFolder(self, depot_partition):
         """
-            Handle creation of symlinks to /depot before we perform our kit installs
+            Handle creation of symlinks to /depot before we perform our kit installs.
         """
         depot_location = depot_partition[0].strip()
         if depot_location != '/' and depot_location != '/depot':
@@ -141,7 +140,7 @@ class DiskSpaceCheckReceiver(object):
                 pass
             (path(depot_location) / 'depot').makedirs()
 
-            symlink_target = ( path(depot_location) / 'depot')
+            symlink_target = path(depot_location) / 'depot'
             os.symlink(str(symlink_target), '/depot')
 
     freeDiskSpace = property(_get_free_disk_space)

@@ -34,9 +34,6 @@ TIMEZONE_FILE = '/etc/sysconfig/clock'
 
 class TimezoneReceiver(object):
 
-    def __init__(self, args=None):
-        super(TimezoneReceiver, self).__init__()
-
     def probe_timezone(self):
         message.display("Probing for timezone settings")
         if not path(TIMEZONE_FILE).exists():

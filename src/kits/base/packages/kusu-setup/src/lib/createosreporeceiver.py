@@ -34,7 +34,7 @@ REPOMAN_NEW_REPO_COMMAND = 'kusu-repoman -n -r %s'
 REPOMAN_ADD_KIT_COMMAND = 'kusu-repoman -r %s -a -i %s'
 REPOMAN_REFRESH_REPO_COMMAND = 'kusu-repoman -u -r %s'
 
-class CreateOSRepoReceiver:
+class CreateOSRepoReceiver(object):
     """
     This class creates/initializes the OS repo.
     """

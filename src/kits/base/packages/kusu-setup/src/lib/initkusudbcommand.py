@@ -26,7 +26,7 @@ class InitKusuDBCommand(Command):
     This is the command class for initializing kusudb.
     """
     def __init__(self, receiver, nicCheck, dhcpCheck, envCheck, systemSettings):
-
+        super(InitKusuDBCommand, self).__init__()
         self._receiver = receiver
         self._nicCheck = nicCheck
         self._dhcpCheck = dhcpCheck
@@ -34,7 +34,8 @@ class InitKusuDBCommand(Command):
         self._systemSettings = systemSettings
 
     def execute(self):
-        result = self._receiver.createDB(self._nicCheck, self._dhcpCheck, self._envCheck, self._systemSettings)
+        result = self._receiver.createDB(self._nicCheck, self._dhcpCheck,
+                                         self._envCheck, self._systemSettings)
 
         if result:
             self._proceedStatus = True
@@ -42,3 +43,4 @@ class InitKusuDBCommand(Command):
         else:
             self._proceedStatus = False
             self._quitMessage = "Not able to initialize kusudb database. Exiting..."
+

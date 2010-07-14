@@ -24,6 +24,7 @@ import message
 
 class RpmInstallCommand(Command):
     def __init__(self, receiver, repoid):
+        super(RpmInstallCommand, self).__init__()
         self._receiver = receiver
         self._repoid = repoid
 

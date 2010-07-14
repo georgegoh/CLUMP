@@ -37,10 +37,7 @@ except:
 
 FIND_COMMAND = 'find -P %s -name kit-base*.rpm'
 
-class RpmInstallReceiver:
-
-    def __init__(self):
-        pass
+class RpmInstallReceiver(object):
 
     def _disableIptablesKusurc(self):
         kusurc_dir = path('/etc/rc.kusu.d')

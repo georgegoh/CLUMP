@@ -27,7 +27,7 @@ import kusu.ipfun as ipfun
 from kusu.core import netutil
 
 
-class InitKusuDBReceiver:
+class InitKusuDBReceiver(object):
     """
     This class initializes the sqlite kusudb.
     """

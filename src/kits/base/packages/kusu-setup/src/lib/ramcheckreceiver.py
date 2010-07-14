@@ -33,9 +33,6 @@ PROC_MEMINFO = '/proc/meminfo'
 
 class RamCheckReceiver(object):
 
-    def __init__(self, args=None):
-        super(RamCheckReceiver, self).__init__()
-
     def get_ram_size(self):
         """
             Returns the amount of RAM in the system.
