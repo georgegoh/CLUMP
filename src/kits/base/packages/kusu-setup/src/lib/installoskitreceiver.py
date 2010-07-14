@@ -96,11 +96,11 @@ class InstallOSKitReceiver:
                           'because the media does not match the ' + \
                           'following criteria:\n\t' + '\n\t'.join(err_list)
 
-        #try:
-        self._addOSKit(kit_media, cd)
-        #except Exception, msg:
-            #self.kitops.unmountMedia()
-            #return False, "\nFailed to add OS Kit:  %s" % msg
+        try:
+            self._addOSKit(kit_media, cd)
+        except Exception, msg:
+            self.kitops.unmountMedia()
+            return False, "\nFailed to add OS Kit:  %s" % msg
 
         return True, ''
 
