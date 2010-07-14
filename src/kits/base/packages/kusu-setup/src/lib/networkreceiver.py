@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id$
+# $Id: networkreceiver.py 5190 2010-06-28 09:39:52Z mkchew $
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #
@@ -71,7 +71,7 @@ class NetworkReceiver(object):
             if path(network_file).exists():
                 return self._get_boot_protocol(network_file)
             else:
-                network_file = SLESFAMILY_NETWORKFILE_PATH + 'ifcfg-eth-id-%s' % properties[interface]['hwaddr']
+                network_file = SLESFAMILY_NETWORKFILE_PATH + 'ifcfg-eth-id-%s' % properties['hwaddr']
                 if path(network_file).exists():
                     return self._get_boot_protocol(network_file)
 
@@ -89,6 +89,10 @@ class NetworkReceiver(object):
                break
 
        fp.close()
+       # Normalize remove quotes
+       value = value.strip('"')
+       value = value.strip("'")
+
        if value and value.lower() != 'dhcp':
            return True
        else:

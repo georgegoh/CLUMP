@@ -22,7 +22,7 @@ from command import Command
 import message
 import kusu.ipfun as ipfun
 from diskspacecheckreceiver import MINIMUM_DISK_SPACE_REQ
-
+from setup_errors import KusuProbePluginError
 
 class SystemSettingsCommand(Command):
     """
@@ -117,7 +117,6 @@ class SystemSettingsCommand(Command):
             self._proceedStatus = True
 
         except KusuProbePluginError, msg:
-            message.failure()
             self._proceedStatus = False
             self._quitMessage = "Not able to detect system settings [%s]. Quitting." % msg
             return
