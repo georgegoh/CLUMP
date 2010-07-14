@@ -1,3 +1,21 @@
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+
 Summary: Setup module
 name: kusu-setup
 Version: 2.1
@@ -22,7 +40,7 @@ make nodeps
 %install
 rm -rf $RPM_BUILD_ROOT
 
-%define _kusu   /opt/kusu/bootstrap
+%define _kusu /opt/kusu/bootstrap
 
 # directories for kusu bootstrap
 install -d $RPM_BUILD_ROOT/%{_kusu}
@@ -45,17 +63,17 @@ mv usr/lib/python2.4/site-packages/* 3rdparty/python-IPy
 
 # repackage python-IPy into kusu-setup
 install -d $RPM_BUILD_ROOT/%{_kusu}/%{_site_packages}
-for f in `find 3rdparty/python-IPy -type f | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do \
-        install 3rdparty/python-IPy/$f $RPM_BUILD_ROOT/%{_kusu}/%{_site_packages}/$f; \
+for f in `find 3rdparty/python-IPy -type f | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do
+    install 3rdparty/python-IPy/$f $RPM_BUILD_ROOT/%{_kusu}/%{_site_packages}/$f;
 done
 
 # package kusu-primitive
-for d in `find buildout/primitive -type d | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do \
-	install -d $RPM_BUILD_ROOT/%{_kusu}/$d; \
+for d in `find buildout/primitive -type d | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do
+    install -d $RPM_BUILD_ROOT/%{_kusu}/$d;
 done
 
-for f in `find buildout/primitive -type f | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do \
-	install buildout/primitive/$f $RPM_BUILD_ROOT/%{_kusu}/$f; \
+for f in `find buildout/primitive -type f | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do
+    install buildout/primitive/$f $RPM_BUILD_ROOT/%{_kusu}/$f;
 done
 
 # extract rpm package python-sqlalchemy
@@ -64,12 +82,12 @@ mv usr/lib/python2.4/site-packages/sqlalchemy 3rdparty/
 
 # repackage python-sqlalchemy into kusu-setup
 %define _sqlalchemy_lib %{_site_packages}/sqlalchemy
-for d in `find 3rdparty/sqlalchemy -type d | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do \
-        install -d $RPM_BUILD_ROOT/%{_kusu}/%{_sqlalchemy_lib}/$d; \
+for d in `find 3rdparty/sqlalchemy -type d | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do
+    install -d $RPM_BUILD_ROOT/%{_kusu}/%{_sqlalchemy_lib}/$d;
 done
 
-for f in `find 3rdparty/sqlalchemy -type f | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do \
-        install 3rdparty/sqlalchemy/$f $RPM_BUILD_ROOT/%{_kusu}/%{_sqlalchemy_lib}/$f; \
+for f in `find 3rdparty/sqlalchemy -type f | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do
+    install 3rdparty/sqlalchemy/$f $RPM_BUILD_ROOT/%{_kusu}/%{_sqlalchemy_lib}/$f;
 done
 
 # extract rpm package python-sqlite2
@@ -80,8 +98,8 @@ mv usr/lib64/python2.4/site-packages/pysqlite2 3rdparty/
 %define _pysqlite2_lib %{_site_packages}/pysqlite2
 install -d $RPM_BUILD_ROOT/%{_kusu}/%{_pysqlite2_lib}
 
-for f in `find 3rdparty/pysqlite2 -type f | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do \
-        install 3rdparty/pysqlite2/$f $RPM_BUILD_ROOT/%{_kusu}/%{_pysqlite2_lib}/$f; \
+for f in `find 3rdparty/pysqlite2 -type f | grep -v '\.svn' | grep -v '\/test' | cut -c20-`; do
+    install 3rdparty/pysqlite2/$f $RPM_BUILD_ROOT/%{_kusu}/%{_pysqlite2_lib}/$f;
 done
 
 # extract rpm package python-psycopg2
@@ -92,8 +110,8 @@ mv usr/lib64/python2.4/site-packages/psycopg2 3rdparty/
 %define _psycopg2_lib %{_site_packages}/psycopg2
 install -d $RPM_BUILD_ROOT/%{_kusu}/%{_psycopg2_lib}
 
-for f in `find 3rdparty/psycopg2 -type f | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do \
-        install 3rdparty/psycopg2/$f $RPM_BUILD_ROOT/%{_kusu}/%{_psycopg2_lib}/$f; \
+for f in `find 3rdparty/psycopg2 -type f | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do
+    install 3rdparty/psycopg2/$f $RPM_BUILD_ROOT/%{_kusu}/%{_psycopg2_lib}/$f;
 done
 
 # extract rpm package python-cheetah
@@ -102,21 +120,21 @@ mv usr/lib64/python2.4/site-packages/Cheetah 3rdparty/
 
 # repackage python-cheetah into kusu-setup
 %define _cheetah_lib %{_site_packages}/Cheetah
-for d in `find 3rdparty/Cheetah -type d | grep -v '\.svn' | grep -v '\/test' | cut -c18-`; do \
-        install -d $RPM_BUILD_ROOT/%{_kusu}/%{_cheetah_lib}/$d; \
+for d in `find 3rdparty/Cheetah -type d | grep -v '\.svn' | grep -v '\/test' | cut -c18-`; do
+    install -d $RPM_BUILD_ROOT/%{_kusu}/%{_cheetah_lib}/$d;
 done
 
-for f in `find 3rdparty/Cheetah -type f | grep -v '\.svn' | grep -v '\/test' | cut -c18-`; do \
-        install 3rdparty/Cheetah/$f $RPM_BUILD_ROOT/%{_kusu}/%{_cheetah_lib}/$f; \
+for f in `find 3rdparty/Cheetah -type f | grep -v '\.svn' | grep -v '\/test' | cut -c18-`; do
+    install 3rdparty/Cheetah/$f $RPM_BUILD_ROOT/%{_kusu}/%{_cheetah_lib}/$f;
 done
 
 # kusu-setup files
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m755 bin/kusu-setup $RPM_BUILD_ROOT/%{_kusu}/bin/kusu-setup
-install -m644 lib/command.py  $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/message.py  $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/cleanupcommand.py  $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/cleanupreceiver.py  $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
+install -m644 lib/command.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
+install -m644 lib/message.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
+install -m644 lib/cleanupcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
+install -m644 lib/cleanupreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/createosrepocommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/createosreporeceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/dhcpcheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
@@ -148,18 +166,12 @@ install -m644 lib/systemsettingsreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/
 install -m644 lib/timezonereceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m755 kusu-path/src/COPYING $RPM_BUILD_ROOT/%{_kusu}/share/doc/%{name}-%{version}
+install -m755 doc/COPYING $RPM_BUILD_ROOT/%{_kusu}/share/doc/%{name}-%{version}
 
 # for pulling in kusu-core
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
 install -m644 kusu-core/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu
-install -m644 kusu-core/src/lib/netutil.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
-install -m644 kusu-core/src/lib/app.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
-install -m644 kusu-core/src/lib/db.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
-install -m644 kusu-core/src/lib/database.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
-install -m644 kusu-core/src/lib/rcplugin.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
-install -m644 kusu-core/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
-install -m644 kusu-core/src/lib/netutil.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
+install -m644 kusu-core/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/core
 
 # for pulling in kusu-util
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/util
@@ -173,66 +185,35 @@ install -m644 kusu-path/src/path.py $RPM_BUILD_ROOT/%{_kusu}/lib/python
 
 # for pulling in kusu-buildkit
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
-install -m644 kusu-buildkit/src/lib/builder.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
-install -m644 kusu-buildkit/src/lib/checker.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
-install -m644 kusu-buildkit/src/lib/methods.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
-install -m644 kusu-buildkit/src/lib/tool.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
-install -m644 kusu-buildkit/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
+install -m644 kusu-buildkit/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/buildkit
 
 # for pulling in kusu-kitops
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
-install -m644 kusu-kitops/src/lib/kitops.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
-install -m644 kusu-kitops/src/lib/addkit_strategies.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
-install -m644 kusu-kitops/src/lib/deletekit_strategies.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
-install -m644 kusu-kitops/src/lib/package.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
-install -m644 kusu-kitops/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
+install -m644 kusu-kitops/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/kitops
 
 # for pulling in kusu-boot
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/boot
-install -m644 kusu-boot/src/lib/distro.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/boot
-install -m644 kusu-boot/src/lib/image.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/boot
-install -m644 kusu-boot/src/lib/tool.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/boot
-install -m644 kusu-boot/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/boot
+install -m644 kusu-boot/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/boot
 
 # for pulling in ipfun.py
 install -m644 kusu-base-node/lib/kusu/ipfun.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu
 
 # for pulling in kusu-repoman
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
-install -m644 kusu-repoman/src/lib/repofactory.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
-install -m644 kusu-repoman/src/lib/repo.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
-install -m644 kusu-repoman/src//lib/tools.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
-install -m644 kusu-repoman/src/lib/updates.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
-install -m644 kusu-repoman/src/lib/genupdates.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
-install -m644 kusu-repoman/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
+install -m644 kusu-repoman/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/repoman
 
 # for pulling in kusu-driverpatch
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/control.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/actions.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/dkms.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/kernel.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/modules.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/modulesfactory.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
-install -m644 kusu-driverpatch/src/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
+install -m644 kusu-driverpatch/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
 
 #for pulling in nodeinstaller-patchfiles
-
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/bin
-#install -d $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/src
 install -m644 kusu-nodeinstaller-patchfiles/bin/downloader $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/bin
-install -m644 kusu-nodeinstaller-patchfiles/lib/downloader.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
-install -m644 kusu-nodeinstaller-patchfiles/lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
-install -m644 kusu-nodeinstaller-patchfiles/lib/packagesack.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
-install -m644 kusu-nodeinstaller-patchfiles/lib/packages.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
+install -m644 kusu-nodeinstaller-patchfiles/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/genupdates
 
 cd kusu-nodeinstaller-patchfiles/; find src/ | cpio -mpdu $RPM_BUILD_ROOT/%{_kusu}/lib/nodeinstaller/; cd ../
-
-#install -d $RPM_BUILD_ROOT/%{_kusu}/sbin
 install -m755 kusu-nodeinstaller-patchfiles/sbin/genupdatesimg.py $RPM_BUILD_ROOT/%{_kusu}/sbin/genupdatesimg
-
-
 
 %pre
 
@@ -264,39 +245,16 @@ rm -rf %{buildroot}
 %{_kusu}/%{_site_packages}/*
 %{_kusu}/libexec/*
 
-#for kusu-core
-%{_kusu}/lib/python/kusu/__init__.py*
-%{_kusu}/lib/python/kusu/core/*
-
-# for kusu-util
-%{_kusu}/lib/python/kusu/util/*
-
 # for kusu-path
 %{_kusu}/lib/python/path.py*
-
-# for kusu-buildkit
-%{_kusu}/lib/python/kusu/buildkit/*
-
-# for kusu-kitops
-%{_kusu}/lib/python/kusu/kitops/*
-
-# for kusu-boot
-%{_kusu}/lib/python/kusu/boot/*
-
-# for ipfun
-%{_kusu}/lib/python/kusu/ipfun.py*
-
-# for kusu-repoman
-%{_kusu}/lib/python/kusu/repoman/*
-
-# for kusu-driverpatch
-%{_kusu}/lib/python/kusu/driverpatch/*
 
 # for node-installer-patchfiles
 %{_kusu}/lib/nodeinstaller/bin/*
 %{_kusu}/lib/nodeinstaller/src/*
-%{_kusu}/lib/python/kusu/genupdates
 %{_kusu}/sbin/genupdatesimg
+
+# for other kusu packages that were included in kusu-setup
+%{_kusu}/lib/python/kusu/*
 
 %changelog
 * Wed May 19 2010 - Ang Yun Quan <yqang@osgdc.org>
