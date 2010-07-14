@@ -33,7 +33,7 @@ class InstallOSKitCommand(Command):
         self._proceedStatus = False
         while True:
             try:
-                value = int(message.input('\nSelect the media to install KUSU from: \n' +
+                value = int(message.input('\nSelect the media to install Kusu from: \n' +
                                       '1)\tCD/DVD drive \n' +
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
@@ -71,7 +71,6 @@ class InstallOSKitCommand(Command):
                 continue
 
             if value == 1:
-                #Prompt for and install the base kit
                 message.input("\nInsert the CD/DVD media containing your OS. Press ENTER to continue...")
                 status, msg = self._receiver.install_os_kit('cdrom')
             elif value == 2:

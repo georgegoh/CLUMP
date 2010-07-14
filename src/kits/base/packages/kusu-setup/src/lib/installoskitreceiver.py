@@ -102,7 +102,7 @@ class InstallOSKitReceiver(object):
             self.kitops.unmountMedia()
             return False, "\nNot able to add OS Kit: %s" % msg
 
-        message.display("\nFinished Copying the OS kit.\n")
+        message.display("\nFinished adding the OS kit.\n")
         return True, ''
 
     def eject(self, path):
@@ -286,8 +286,8 @@ class InstallOSKitReceiver(object):
         if ostype is not None:
             if self.os_kit:
                 return True, '\nCannot add more than one OS kit ' + \
-                               'during installation. ' + \
-                               '\nYou can add additional OS kits using kusu-kitops later.'
+                             'during installation. ' + \
+                             '\nYou can add additional OS kits using kusu-kitops later.'
 
         return False, ''
 
@@ -327,6 +327,7 @@ class InstallOSKitReceiver(object):
                 message.display( "\nAdding Kit: '%s'..." % kitname)
                 self.kitops.addKit(kit, api=str(kit[4]))
                 retVal = True
+                message.success()
             except (KitAlreadyInstalledError, InstallKitRPMError,
                     ComponentAlreadyInstalledError,UnsupportedKitAPIError), e:
                 msg += "\nNot able to install the kit '%s': %s" % (kitname, e)
