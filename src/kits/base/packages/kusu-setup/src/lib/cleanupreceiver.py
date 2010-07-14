@@ -153,6 +153,10 @@ class CleanupReceiver:
 
         if self._dirtyFlag:
 
+            #remove kusu-installer lock file
+            if os.path.exists('/var/lock/subsys/kusu-installer'):
+                os.unlink('/var/lock/subsys/kusu-installer')
+
             #remove all RPMs
             if self._need_to_remove_rpms:
                 message.display("\nRemoving Component Kusu RPMs....")

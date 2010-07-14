@@ -55,6 +55,9 @@ class KusuSetup:
         #add our sbin folder to pickup genupdatesimg
         os.environ['PATH'] = os.environ['PATH'] + ':/opt/kusu/bootstrap/sbin:'
 
+        #touch /var/lock/subsys/kusu-installer to skip genupdatesimg in repo.py
+        open('/var/lock/subsys/kusu-installer','w').close()
+
         #build up a PYTHONPATH so sub/shell processes have access to our libs
         os.environ['PYTHONPATH'] = ""
         for item in sys.path:
