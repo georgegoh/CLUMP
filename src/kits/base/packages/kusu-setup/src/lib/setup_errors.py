@@ -1,7 +1,7 @@
 #!/usr/bin/env python
  # -*- coding: utf-8 -*-
 #
-# $Id: setup_errors.py $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #

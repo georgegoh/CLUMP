@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# $Id: supported_os.py 623 2010-04-21 11:36:48Z ankit $
+# $Id$
 #
 # Copyright (C) 2010 Platform Computing Inc.
 #
