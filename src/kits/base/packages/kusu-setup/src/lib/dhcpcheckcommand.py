@@ -36,7 +36,9 @@ class DhcpCheckCommand(Command):
         """
             Ask the user whether their DHCP server is to be run locally or externally
         """
-        message.display("\nIndicate whether you are running a local (master node) or external (on attached network) DHCP server for your provisioning network")
+        message.display("\nIndicate whether you are running a local (master node) or" +\
+                         "\nexternal (on attached network) DHCP server for your" +\
+                         "\nprovisioning network")
         message.display("\n\t1) Local DHCP server")
         message.display("\n\t2) External DHCP server")
 
@@ -44,7 +46,9 @@ class DhcpCheckCommand(Command):
         """
             Ask the user whether their Domain Name server is to be run locally or externally
         """
-        message.display("\nIndicate whether you are running a local (master node) or external (on attached network) Domain Name server for your provisioning network")
+        message.display("\nIndicate whether you are running a local (master node) or" +\
+                         "\nexternal (on attached network) Domain Name server for your" +\
+                         "\nprovisioning network")
         message.display("\n\t1) Local Domain Name Server (DNS)")
         message.display("\n\t2) External Domain Name Server (DNS)")
 

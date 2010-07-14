@@ -93,7 +93,7 @@ class NicCheckCommand(Command):
         #if we have more than one configured nic, we prompt for whether the user want's to configure
         # a second/public nic.
         if self._configuredNicCount > 1 and \
-                self.getYesNoAsBool("\nWould you like to configure a public network"):
+                self.getYesNoAsBool("\nWould you like to configure a public network", 'Y'):
             status, self.publicInterfaceTuple = self._promptForPublicNic()
             if not status:
                 return

@@ -232,7 +232,7 @@ class InstallOSKitReceiver(object):
 
         if sum([f.size for f in kitdir.walkfiles()]) <= 900000000: # cd provided
             while 1:
-                answer = message.input('\nAny more disks for this OS kit? (Y/[N]):').strip()
+                answer = message.input('\nAny more disks for this OS kit? (Y/N)[N]:').strip()
                 # unmount and eject.
                 self.kitops.unmountMedia()
                 if cdrom:
