@@ -18,7 +18,7 @@ class KusuRC(rcplugin.Plugin):
     def __init__(self):
         rcplugin.Plugin.__init__(self)
         self.name    = 'sshdconfig'
-        self.desc    = 'config sshd for SLES10'
+        self.desc    = 'Setting up sshd'
         self.ngtypes = ['installer', 'compute', 'compute-imaged', 'compute-diskless']
         self.delete  = False
         # this should be moved to primitive?
@@ -26,7 +26,7 @@ class KusuRC(rcplugin.Plugin):
         self.sshdservice = 'sshd'
 
     def run(self):
-        
+
         if not os.path.exists(self.sshdconfig):
             return False
         fp = open(self.sshdconfig, 'r')
@@ -36,14 +36,15 @@ class KusuRC(rcplugin.Plugin):
         lineno = 0
         for line in lines:
             lineno += 1
-            # ignore space lines
+            # ignore empty lines
             if line.isspace():
                 continue
 
             linestrip = string.strip(line)
-            # comments
+            # ignore comments
             if linestrip[0] == "#":
                 continue
+
             try:
                 key,val = string.split(linestrip, ' ', 1)
             except:
@@ -53,7 +54,7 @@ class KusuRC(rcplugin.Plugin):
             if key == 'PasswordAuthentication' and val == 'no':
                 line = 'PasswordAuthentication yes\n'
                 lines[lineno-1] = line
-        
+
         # replace config file for sshd
         # CREATE temp file and update the config file.
         tmpfd, tmppath = tempfile.mkstemp(suffix='.txt', text=True)
@@ -77,7 +78,7 @@ class KusuRC(rcplugin.Plugin):
 
         # Create new sshd config file.
         os.rename(tmppath, self.sshdconfig)
-        
+
         # Restart sshd if it is running.
         success, (retcode, out, err) = self.service(self.sshdservice, 'status')
         if retcode.find('running'):
