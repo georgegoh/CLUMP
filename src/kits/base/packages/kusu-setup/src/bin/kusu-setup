@@ -277,7 +277,9 @@ commands to generate new firewall rules:
 \n
 All existing repos in /etc/yum.repos.d have been
 disabled. Do re-enable any required repos manually.
-\n
+""")
+
+        message.display("""\n
 Your Kusu installation is now complete.
 NOTE: Reboot your server at this point for the
       final kusu settings to be applied.
