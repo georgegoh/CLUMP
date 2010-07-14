@@ -9,7 +9,6 @@
 #
 import os
 import re
-import parted
 import subprocess
 from path import path
 from primitive.system.hardware import net
@@ -176,6 +175,7 @@ def getIDE(type):
                 d[hd.basename()] = {'model': readFile(hd / 'model'), \
                                     'vendor': readFile(hd / 'vendor')}
                 if type == 'disk':
+                    import parted
                     d[hd.basename()]['partitions'] = getIDEPartitions(hd.basename())
                     devpath = path('/dev/') / hd.basename()
                     nodes.checkAndMakeNode(devpath)
@@ -292,6 +292,7 @@ def getSCSI(type):
                 d[device]['vendor'] = readFile(s / 'vendor')
                 d[device]['model'] = readFile(s / 'model')
                 if type == 'disk':
+                    import parted
                     d[device]['partitions'] = getSCSIPartitions(dev)
                     devpath = path('/dev/') / device
                     nodes.checkAndMakeNode(devpath)

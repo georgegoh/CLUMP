@@ -26,7 +26,7 @@ Vendor: Platform Computing Inc.
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Source: %{name}-%{version}.%{release}.tar.gz
 BuildArch: noarch
-Requires: python pyparted createrepo yum-utils
+Requires: python pyparted createrepo
 
 %description
 This package enables the bootstrap installation of KUSU.
@@ -75,6 +75,9 @@ done
 for f in `find buildout/primitive -type f | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do
     install buildout/primitive/$f $RPM_BUILD_ROOT/%{_kusu}/$f;
 done
+
+# override existing __init__.py to suppress parted dependency
+install -m644 lib/dummy__init__.py $RPM_BUILD_ROOT/%{_kusu}/%{_site_packages}/primitive/system/hardware/__init__.py
 
 # extract rpm package python-sqlalchemy
 rpm2cpio python-sqlalchemy-*.rpm | cpio -dimv ./usr/lib/python2.4/site-packages/sqlalchemy/* 
