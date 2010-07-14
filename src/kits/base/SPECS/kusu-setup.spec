@@ -59,9 +59,9 @@ install -d $RPM_BUILD_ROOT/%{_kusu}/share/doc/%{name}-%{version}
 mkdir -p 3rdparty
 
 # extract rpm package python-IPy
-rpm2cpio python-IPy-*.rpm | cpio -dimv ./usr/lib/python2.4/site-packages/*
+rpm2cpio python-IPy-*.rpm | cpio -dimv ./usr/lib*/python2.4/site-packages/*
 mkdir -p 3rdparty/python-IPy
-mv usr/lib/python2.4/site-packages/* 3rdparty/python-IPy
+mv usr/lib*/python2.4/site-packages/* 3rdparty/python-IPy
 
 # repackage python-IPy into kusu-setup
 install -d $RPM_BUILD_ROOT/%{_kusu}/%{_site_packages}
@@ -82,8 +82,8 @@ done
 install -m644 lib/dummy__init__.py $RPM_BUILD_ROOT/%{_kusu}/%{_site_packages}/primitive/system/hardware/__init__.py
 
 # extract rpm package python-sqlalchemy
-rpm2cpio python-sqlalchemy-*.rpm | cpio -dimv ./usr/lib/python2.4/site-packages/sqlalchemy/* 
-mv usr/lib/python2.4/site-packages/sqlalchemy 3rdparty/
+rpm2cpio python-sqlalchemy-*.rpm | cpio -dimv ./usr/lib*/python2.4/site-packages/sqlalchemy/* 
+mv usr/lib*/python2.4/site-packages/sqlalchemy 3rdparty/
 
 # repackage python-sqlalchemy into kusu-setup
 %define _sqlalchemy_lib %{_site_packages}/sqlalchemy
