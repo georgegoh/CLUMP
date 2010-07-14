@@ -232,6 +232,12 @@ rm -rf %{buildroot}
 %dir %{_kusu}
 %dir %{_kusu}/bin
 %dir %{_kusu}/lib
+%dir %{_kusu}/lib/python
+%dir %{_kusu}/lib/python/kusu
+%dir %{_kusu}/lib/python/bootstrap
+%dir %{_kusu}/lib/python/bootstrap/setup
+%dir %{_kusu}/lib/python2.4
+%dir %{_kusu}/lib/python2.4/site-packages
 %dir %{_kusu}/lib64
 %dir %{_kusu}/lib64/python
 %dir %{_kusu}/libexec
@@ -239,6 +245,8 @@ rm -rf %{buildroot}
 %{_kusu}/bin/kusu-setup
 %{_kusu}/lib/python/bootstrap/__init__.py*
 %{_kusu}/lib/python/bootstrap/setup/*
+%dir %{_kusu}/share/doc
+%dir %{_kusu}/share/doc/%{name}-%{version}
 %doc %{_kusu}/share/doc/%{name}-%{version}/COPYING
 
 # for kusu-primitive and 3rdparty RPMS
@@ -249,6 +257,10 @@ rm -rf %{buildroot}
 %{_kusu}/lib/python/path.py*
 
 # for node-installer-patchfiles
+%dir %{_kusu}/sbin
+%dir %{_kusu}/lib/nodeinstaller
+%dir %{_kusu}/lib/nodeinstaller/bin
+%dir %{_kusu}/lib/nodeinstaller/src
 %{_kusu}/lib/nodeinstaller/bin/*
 %{_kusu}/lib/nodeinstaller/src/*
 %{_kusu}/sbin/genupdatesimg
