@@ -107,18 +107,6 @@ for f in `find 3rdparty/pysqlite2 -type f | grep -v '\.svn' | grep -v '\/test' |
     install 3rdparty/pysqlite2/$f $RPM_BUILD_ROOT/%{_kusu}/%{_pysqlite2_lib}/$f;
 done
 
-# extract rpm package python-psycopg2
-rpm2cpio python-psycopg2-*.rpm | cpio -dimv ./usr/lib64/python2.4/site-packages/psycopg2/* 
-mv usr/lib64/python2.4/site-packages/psycopg2 3rdparty/
-
-# repackage python-psycopg2 into kusu-setup
-%define _psycopg2_lib %{_site_packages}/psycopg2
-install -d $RPM_BUILD_ROOT/%{_kusu}/%{_psycopg2_lib}
-
-for f in `find 3rdparty/psycopg2 -type f | grep -v '\.svn' | grep -v '\/test' | cut -c19-`; do
-    install 3rdparty/psycopg2/$f $RPM_BUILD_ROOT/%{_kusu}/%{_psycopg2_lib}/$f;
-done
-
 # extract rpm package python-cheetah
 rpm2cpio python-cheetah*.rpm | cpio -dimv ./usr/lib64/python2.4/site-packages/Cheetah/* 
 mv usr/lib64/python2.4/site-packages/Cheetah 3rdparty/

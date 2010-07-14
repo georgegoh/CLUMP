@@ -282,7 +282,7 @@ disabled. Do re-enable any required repos manually.
         message.display("""\n
 Your Kusu installation is now complete.
 NOTE: Reboot your server at this point for the
-      final kusu settings to be applied.
+      final Kusu settings to be applied.
 """)
 
 if __name__ == "__main__":

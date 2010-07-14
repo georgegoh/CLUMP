@@ -28,6 +28,7 @@ import message
 
 #CHECK_DB_COMMAND = "PGPASSWORD=%s psql -U postgres -l | grep kusudb"
 DROP_DB_COMMAND = "PGPASSWORD=%s psql -U postgres -c 'drop database kusudb'"
+POSTGRES_DB_COMMAND = ['psql', 'kusudb', 'nobody', '--command', 'select * from appglobals;']
 
 KUSU_RPM_LIST = [
 'kusu-buildkit',
@@ -75,20 +76,13 @@ class CleanupReceiver(object):
         return False
 
     def dbIsAvailable(self):
-        from kusu.core import database as db
-        import sqlalchemy as sa
-
-        # Clear all mappers and init them
-        for key in sa.orm.mapper_registry.keys():
-            sa.orm.mapper_registry.pop(key)
-
-        #creating a dummyDB of postgres type to do connectivity test
-        self._pgDB=db.DB('postgres', db='kusudb', username='nobody', entity_name='alt')
 
         try:
-            #do a simple check for a known table
-            self._pgDB.appglobals.exists()
+            returncode = subprocess.call(POSTGRES_DB_COMMAND)
         except:
+            return False
+
+        if returncode:
             return False
 
         return True
