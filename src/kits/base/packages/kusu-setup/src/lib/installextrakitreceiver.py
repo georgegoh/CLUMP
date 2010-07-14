@@ -23,6 +23,7 @@ import sys
 from path import path
 from primitive.support import osfamily
 from primitive.support.util import pollCommand
+import message
 
 KITOPS_ADD_COMMAND = 'kusu-kitops -am '
 
@@ -64,6 +65,6 @@ class InstallExtraKitReceiver:
             cmd = KITOPS_ADD_COMMAND + ' %s' % kit_iso
             out, err = pollCommand(cmd)
             if err:
-                print err[0]
+                message.failure(err[0],0)
         else:
-            print "Kit installation is unsuccessful."
+            message.display("Kit installation is unsuccessful.")

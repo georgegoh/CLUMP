@@ -36,26 +36,26 @@ class DhcpCheckCommand(Command):
         """
             Ask the user whether their DHCP server is to be run locally or externally
         """
-        print "\nPlease indicate whether you are running a local (master node) or external (on attached network) DHCP server for your provisioning network"
-        print "\t 1) Local DHCP Server"
-        print "\t 2) External DHCP Server"
+        message.display("\nPlease indicate whether you are running a local (master node) or external (on attached network) DHCP server for your provisioning network")
+        message.display("\n\t1) Local DHCP Server")
+        message.display("\n\t2) External DHCP Server")
 
     def prompt_for_dns_locality(self):
         """
             Ask the user whether their Domain Namespace server is to be run locally or externally
         """
-        print "\nPlease indicate whether you are running a local (master node) or external (on attached network) Domain name server for your provisioning network"
-        print "\t 1) Local Domain Namespace Server(DNS)"
-        print "\t 2) External Domain Namespace Server(DNS)"
+        message.display("\nPlease indicate whether you are running a local (master node) or external (on attached network) Domain name server for your provisioning network")
+        message.display("\n\t1) Local Domain Namespace Server(DNS)")
+        message.display("\n\t2) External Domain Namespace Server(DNS)")
 
     def execute(self):
 
         ##Ask the user if have external or local DHCP for the provisioning network.
         while True:
             self.prompt_for_dhcp_locality()
-            dhcpLocality = raw_input("Please enter the number corresponding to your selection: [1]")
+            dhcpLocality = message.input("\nPlease enter the number corresponding to your selection: [1]")
             if strip(dhcpLocality) not in ["1","2",""]:
-                print "Invalid selection. Please choose either (1) or (2) from the given options."
+                message.display("\nInvalid selection. Please choose either (1) or (2) from the given options.")
             else:
                 break
 
@@ -65,9 +65,9 @@ class DhcpCheckCommand(Command):
 
         while True:
             self.prompt_for_dns_locality()
-            dnsLocality = raw_input("Please enter the number corresponding to your selection: [1]")
+            dnsLocality = message.input("\nPlease enter the number corresponding to your selection: [1]")
             if strip(dnsLocality) not in ["1","2",""]:
-                print "Invalid selection. Please choose either (1) or (2) from the given options."
+                message.display("\nInvalid selection. Please choose either (1) or (2) from the given options.")
             else:
                 break
 

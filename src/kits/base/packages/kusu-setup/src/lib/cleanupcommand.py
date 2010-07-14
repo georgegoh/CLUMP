@@ -19,12 +19,13 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from command import Command
+import message
 
 class CleanupCommand(Command):
     def __init__(self, receiver):
         self._receiver = receiver
 
     def execute(self):
-        print ("Cleaning up partial Kusu installation...")
+        message.display("Cleaning up partial Kusu installation...")
         self._receiver.cleanup()
 

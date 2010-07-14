@@ -27,6 +27,7 @@ except ImportError:
 
 from path import path
 from kusu.util.verify import verifyFQDN
+import message
 
 HOSTS = '/etc/hosts'
 
@@ -41,7 +42,7 @@ class FQDNReceiver(object):
     def pub_dns_discover(self):
 
         self.pub_domain = socket.gethostname()
-        return self._verify_fqdn(self.pub_domain)        
+        return self._verify_fqdn(self.pub_domain)
 
     def _verify_fqdn(self, fqdn):
 
@@ -60,13 +61,13 @@ class FQDNReceiver(object):
             fqdn_probed = self._read_hosts()
 
         if not fqdn_probed:
-            print "Kusu Setup failed to discover Fully Qualified Domain Name (FQDN) for provision interface."
+            message.display("Kusu Setup failed to discover Fully Qualified Domain Name (FQDN) for provision interface.")
             self._prompt_for_fqdn(network_type)
 
         return True
 
     def _read_hosts(self):
- 
+
         fp = open(HOSTS, 'r')
         for line in fp.readlines():
             line = line.strip()
@@ -78,7 +79,7 @@ class FQDNReceiver(object):
                 break
 
         fp.close()
-        
+
         return self._verify_fqdn(self.prov_domain)
 
     def get_fqdn(self):
@@ -89,11 +90,11 @@ class FQDNReceiver(object):
     def _prompt_for_fqdn(self):
         st = False
         while not st:
-            self.prov_domain = raw_input("Please specify private cluster domain (example private.dns.zone):")
+            self.prov_domain = message.input("\nPlease specify private cluster domain (example private.dns.zone):")
 
             st, msg = verifyFQDN(self.prov_domain)
             if msg:
-                print "Input Error: %s" % msg
+                message.failure("Input Error: %s" % msg, 0)
 
     fqdn = property(get_fqdn)
 

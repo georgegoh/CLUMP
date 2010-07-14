@@ -18,7 +18,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-
+import message
 class Command(object):
 
     def __init__(self):
@@ -33,7 +33,7 @@ class Command(object):
 
         #force a single-character Yes/No response
         while answer.strip().lower() not in ['no', 'yes', 'y', 'n', '']:
-            answer = raw_input("%s ? (Y/[N])" % prompt)
+            answer = message.input("%s? (Y/[N]):" % prompt)
 
         if answer.strip().lower() in ['yes','y']:
             return True

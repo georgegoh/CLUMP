@@ -46,8 +46,7 @@ class SystemSettingsCommand(Command):
             if self._diskspace_receiver.is_depot_valid_installdir():
                 message.success()
             else:
-                message.failure()
-                print "   Kusu Setup has found existing '/depot' mountpoint with insufficient diskspace.\n    Please make sure that the '\depot' partition has atleast %dGB of free diskspace. \n" % (MINIMUM_DISK_SPACE_REQ/1024)
+                message.failure("Kusu Setup has found existing '/depot' mountpoint with insufficient diskspace.\nPlease make sure that the '\depot' partition has atleast %dGB of free diskspace." % (MINIMUM_DISK_SPACE_REQ/1024))
                 self._quitMessage = "\nBye!"
                 self._proceedStatus = False
                 return
@@ -70,7 +69,7 @@ class SystemSettingsCommand(Command):
             self._proceedStatus = True
         else:
             self._proceedStatus = False
-            self._quitMessage = "Not enough statically configured network interfaces.\n    Kusu installation requires at least 1 statically configured network interfaces"
+            self._quitMessage = "Not enough statically configured network interfaces.\nKusu installation requires at least 1 statically configured network interfaces"
             return
 
         #make a note of how many configured interfaces we have
@@ -78,8 +77,7 @@ class SystemSettingsCommand(Command):
 
         message.display("Checking for the public hostname.")
         if not self._fqdn_receiver.pub_dns_discover():
-            message.failure()
-            print "   Kusu-setup failed to discover the public hostname.\n    Please set a valid public FQDN for your machine."
+            message.failure("Kusu-setup failed to discover the public hostname.\nPlease set a valid public FQDN for your machine.")
             self._quitMessage = "\nBye!"
             self._proceedStatus = False
             return
@@ -88,9 +86,8 @@ class SystemSettingsCommand(Command):
 
         message.display("Checking for existing DNS server.")
         if self._networkReceiver.is_dns_installed():
-                print "\n    A previously installed DNS server has been detected.\n    Proceeding will overwrite existing settings."
-                message.warning()
-                if not self.getYesNoAsBool("    Would you like to proceed"):
+                message.warning("\nA previously installed DNS server has been detected.\nProceeding will overwrite existing settings.")
+                if not self.getYesNoAsBool("Would you like to proceed"):
                     self._quitMessage = "\nBye!"
                     self._proceedStatus = False
                     return
@@ -99,9 +96,8 @@ class SystemSettingsCommand(Command):
 
         message.display("Checking for existing DHCP server")
         if self._networkReceiver.is_dhcp_installed():
-                print "\n    A previously installed DHCP server has been detected.\n    Proceeding will overwrite existing settings."
-                message.warning()
-                if not self.getYesNoAsBool("    Would you like to proceed"):
+                message.warning("\nA previously installed DHCP server has been detected.\nProceeding will overwrite existing settings.")
+                if not self.getYesNoAsBool("\nWould you like to proceed"):
                     self._quitMessage = "\nBye!"
                     self._proceedStatus = False
                     return
@@ -129,11 +125,10 @@ class SystemSettingsCommand(Command):
         message.display("Probing for DNS settings")
         resolvList = self._networkReceiver.nameservers
         if len(resolvList) == 0:
-            message.warning()
-            print("\n    No 'nameserver' entries were found in /etc/resolv.conf")
+            message.warning("No 'nameserver' entries were found in /etc/resolv.conf")
             nameservers = ""
             while nameservers == "":
-                nameservers = raw_input("    Please enter the IP addresses of your nameservers separated by commas: ")
+                nameservers = message.input("\nPlease enter the IP addresses of your nameservers separated by commas: ")
                 if nameservers.strip() == "":
                     continue
 
@@ -151,7 +146,7 @@ class SystemSettingsCommand(Command):
                     self._proceedStatus = True
                     break
                 else:
-                    print "Node of the entered addresses is a valid IP address."
+                    message.display("Node of the entered addresses is a valid IP address.")
                     nameservers = ""
         else:
             self.nameservers = resolvList

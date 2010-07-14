@@ -25,30 +25,54 @@ try:
 except:
     from popen5 import subprocess
 
+import kusu.util.log as kusulog
+
+kl = kusulog.getKusuLog('setup')
+kl.addFileHandler()
 
 def display(desc):
-    print '%s%s' % (' '*3, desc or ''),
-    sys.stdout.flush()
+    ignore_first_print = 1
+    for msg in desc.split('\n'):
+        if not ignore_first_print:
+            print
+        print '%s%s' % (' '*3, msg or ''),
+        sys.stdout.flush()
+        ignore_first_print = 0
 
+def input(desc):
+    if desc:
+        display(desc)
+        return raw_input()
 
-def failure():
-    cmd = 'source /lib/lsb/init-functions && log_failure_msg "$@"'
-    failureP = subprocess.Popen(cmd,
-                                shell=True)
-    failureP.communicate()
-    sys.stdout.flush()
+def print_log_msg(cmd):
+    runP = subprocess.Popen(cmd,
+                                shell=True, stdout=subprocess.PIPE)
+    out = runP.stdout.readlines()
+    if out:
+        print out[0].rstrip()
 
-def success():
-    cmd = 'source /lib/lsb/init-functions && log_success_msg "$@"'
-    successP = subprocess.Popen(cmd,
-                                shell=True)
-    successP.communicate()
-    sys.stdout.flush()
+def failure(msg=None, print_status=1 ):
+    if msg:
+        kl.error(msg)
 
-def warning():
-    cmd = 'source /lib/lsb/init-functions && log_warning_msg "$@"'
-    successP = subprocess.Popen(cmd,
-                                shell=True)
-    successP.communicate()
-    sys.stdout.flush()
+    if print_status:
+        cmd = 'source /lib/lsb/init-functions && log_failure_msg "$@"'
+        print_log_msg(cmd)
 
+def success(msg=None, print_status=1):
+    if msg:
+        kl.info(msg)
+        display(msg)
+
+    if print_status:
+        cmd = 'source /lib/lsb/init-functions && log_success_msg "$@"'
+        print_log_msg(cmd)
+
+def warning(msg=None, print_status=1):
+    if msg:
+        kl.warning(msg)
+        display(msg)
+
+    if print_status:
+        cmd = 'source /lib/lsb/init-functions && log_warning_msg "$@"'
+        print_log_msg(cmd)

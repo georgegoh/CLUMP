@@ -30,7 +30,7 @@ class RpmInstallCommand(Command):
     def execute(self):
 
         #installLocation = "/mnt//base" #FIXME:
-        #installLocation = raw_input("Please enter location of Kusu RPMs: [/media/cdrom] ")
+        #installLocation = message.input("Please enter location of Kusu RPMs: [/media/cdrom] ")
 
 
         #if not os.path.exists(installLocation):

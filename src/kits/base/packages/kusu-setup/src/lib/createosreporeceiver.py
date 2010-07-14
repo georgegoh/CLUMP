@@ -69,9 +69,9 @@ class CreateOSRepoReceiver:
         cmd = REPOMAN_NEW_REPO_COMMAND % (repo_name)
         out, err = runCommand(cmd)
         if out:
-            print out[0:out.find('You can')-1]
+            message.display(out[0:out.find('You can')-1])
         if err:
-            print err[0]
+            message.warning(err[0], 0)
 
     def retrieve_all_kits_installed(self):
         return self.__db.Kits.select()
@@ -84,18 +84,16 @@ class CreateOSRepoReceiver:
             cmd = REPOMAN_ADD_KIT_COMMAND % (repo_name, kit.kid)
             out, err = runCommand(cmd)
             if out:
-                print out[0:out.find('Remember')-1]
+                message.display(out[0:out.find('Remember')-1])
             if err:
-                print err[0]
+                message.warning(err[0], 0)
 
     def refresh_repo(self, repo_name):
         message.display("Refreshing repo: %s now. This may take some time..." % repo_name)
         cmd = REPOMAN_REFRESH_REPO_COMMAND % (repo_name)
         out, err = runCommand(cmd)
         if err:
-            print err[0]
-            print "The repository was not properly refreshed. Please do a manual refresh once the installer exits."
-            message.warning()
+            message.warning("The repository was not properly refreshed. Please do a manual refresh once the installer exits.", 0)
         else:
             message.success()
 

@@ -111,38 +111,35 @@ class CleanupReceiver:
         dirtyFlag = False
 
         #Check for presence of /depot
-        message.display("Checking for presence of '/depot' folder")
+        message.display("\nChecking for presence of '/depot' folder")
         if os.path.exists("/depot"):
             dirtyFlag = True
             self._need_to_remove_depot = True
-            message.display("\n/depot folder found")
-            message.warning()
+            message.warning("\n/depot folder found")
         else:
             message.success()
 
 
 
         #Check for presence of kusudb
-        message.display("Checking for presence of kusudb database")
+        message.display("\nChecking for presence of kusudb database")
 
         if self.isDBAvailable():
             dirtyFlag = True
             self._need_to_dropdb = True
-            message.display("\n    A kusudb database was found")
-            message.warning()
+            message.warning("\nA kusudb database was found")
         else:
             message.success()
 
 
         #Check for presence of kusu rpms
         #FIXME: Check only for component-* rpms
-        message.display("Checking for presence of Kusu RPMs")
+        message.display("\nChecking for presence of Kusu RPMs")
 
         if self.hasRPM("component-base-installer") or self.hasRPM("component-base-node") or self.hasRPM("component-gnome-desktop") :
             dirtyFlag = True
             self._need_to_remove_rpms = True
-            message.display("\n    Kusu RPMS was found")
-            message.warning()
+            message.warning("\nKusu RPMS was found")
         else:
             message.success()
 
@@ -158,18 +155,18 @@ class CleanupReceiver:
 
             #remove all RPMs
             if self._need_to_remove_rpms:
-                message.display("Removing Component Kusu RPMs....")
+                message.display("\nRemoving Component Kusu RPMs....")
                 outStr, errStr = runCommand("yum -y remove component-base-installer component-base-node component-gnome-desktop")
                 message.success()
 
-                message.display("Removing Kusu RPMs...")
+                message.display("\nRemoving Kusu RPMs...")
                 rpmList = ' '.join(KUSU_RPM_LIST)
                 outStr, errStr = runCommand("yum -y remove %s" % rpmList)
                 message.success()
 
             #drop kusudb
             if self._need_to_dropdb:
-                message.display("Dropping kusudb database....")
+                message.display("\nDropping kusudb database....")
                 #fetch kusudb password
                 try:
                     passwd = self._get_pgpasswd()
@@ -177,13 +174,10 @@ class CleanupReceiver:
                         outStr, errStr = runCommand(DROP_DB_COMMAND % passwd)
                         message.success()
                     else:
-                        #message.display("\nFailed to retrieve kusudb password. NOT dropping kusudb.")
-                        message.failure()
+                        message.failure("Failed to retrieve kusudb password. NOT dropping kusudb.")
 
                 except Exception , msg:
-                    #message.display("\nFailed to drop kusudb. %s" % msg)
-                    #Log failure
-                    message.failure()
+                    message.failure("Failed to drop kusudb. %s" % msg)
 
             #if os.path.exists('/root/kusu.db'):
             #    print "Removing sqlite database"
@@ -194,7 +188,7 @@ class CleanupReceiver:
 
             #remove /depot folder
             if self._need_to_remove_depot:
-                message.display("Removing '/depot' folder....")
+                message.display("\nRemoving '/depot' folder....")
                 import shutil
                 try:
                     if os.path.islink('/depot'):
@@ -205,7 +199,7 @@ class CleanupReceiver:
 
                     elif os.path.ismount('/depot'):
                         #remove all kusu subfolders, leaving /depot intact
-                        print('\n    /depot is a mountpoint. Only removing kusu subfolders.')
+                        message.display('\n/depot is a mountpoint. Only removing kusu subfolders.')
 
                         if os.path.exists('/depot/contrib'):
                             shutil.rmtree('/depot/contrib')
@@ -226,8 +220,7 @@ class CleanupReceiver:
                         message.success()
 
                 except Exception, msg:
-                    print ("\n    Failed to remove /depot. Folder. %s" % msg)
-                    message.failure()
+                    message.failure("\nFailed to remove /depot. Folder. %s" % msg)
 
 
 

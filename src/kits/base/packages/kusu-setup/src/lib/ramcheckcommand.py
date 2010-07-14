@@ -43,6 +43,6 @@ class RamCheckCommand(Command):
         else:
 
             self._proceedStatus = False
-            self._quitMessage = "\n    Insufficient memory for a master node installation.\n    At least 2GB is required. You have only %dMB available" % int(ramSize)
+            self._quitMessage = "\nInsufficient memory for a master node installation.\nAt least 2GB is required. You have only %dMB available" % int(ramSize)
 
 

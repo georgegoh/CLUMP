@@ -139,5 +139,4 @@ class NetworkReceiver(object):
 if __name__ == '__main__':
     networkReceiver = NetworkReceiver()
     intf, properties = networkReceiver.physicalInterfacesAndProperties
-    print properties.keys()[0]
 

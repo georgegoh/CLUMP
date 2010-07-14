@@ -34,11 +34,10 @@ class SanitizeInstallCommand(Command):
         self._proceedStatus = True
 
         if (detected):
-            print ("\n\n")
-            print ("    ********************** WARNING **********************")
-            print("    Kusu is already installed on this machine. \n    Proceeding will completely remove the current installation.")
+            msg = "\nKusu is already installed on this machine.\nProceeding will completely remove the current installation."
+            message.display("\n%s WARNING %s%s" % ('*'*20, '*'*20, msg) )
 
-            if not self.getYesNoAsBool("    Would you like to proceed?"):
+            if not self.getYesNoAsBool("\nWould you like to proceed"):
                 self._proceedStatus = False
                 self._quitMessage = "User abort. Exiting..."
             else:

@@ -31,6 +31,7 @@ from kusu.util.errors import *
 from primitive.support import osfamily
 import kusu.core.database as db
 import md5
+import message
 from primitive.system.software import probe as softprobe
 
 try:
@@ -126,7 +127,7 @@ class InstallOSKitReceiver:
                                           'during installation. ' + \
                                           'You can add additional OS kit using kusu-kitops later.'
 
-                        print 'Verifying that OS is the right distro, arch, version'
+                        message.display('Verifying that OS is the right distro, arch, version')
                         verified, err_list = self.verifyDistroVersionAndArch(self.kits)
                         if not verified:
                             return False, 'Cannot add OS kit ' + \
@@ -157,7 +158,7 @@ class InstallOSKitReceiver:
                                       'during installation. ' + \
                                       'You can add additional OS kit using kusu-kitops later.'
 
-                    print 'Verifying that OS is the right distro, arch, version'
+                    message.display('Verifying that OS is the right distro, arch, version')
                     verified, err_list = self.verifyDistroVersionAndArch(kits)
                     if not verified:
                         return False, 'Cannot add OS kit ' + \
@@ -183,7 +184,7 @@ class InstallOSKitReceiver:
 
                 if prepare_success:
                     try:
-                        print 'Copying OS kit (%s). This might take a while...' % kit['name']
+                        message.display('Copying OS kit (%s). This might take a while...' % kit['name'])
 
                         self.kitops.copyOSKitMedia(kit)
                     except CopyOSMediaError, e:
@@ -192,7 +193,7 @@ class InstallOSKitReceiver:
 
                 answer = 'FAKE_ANSWER'
                 while answer.strip().lower() not in ['no', 'yes', 'y', 'n', '']:
-                    answer = raw_input("Any more disks for this OS kit ? (Y/[N])")
+                    answer = self.getYesNoAsBool("Any more disks for this OS kit")
 
                 if answer.strip().lower() in ['no','n', '']:
                     break
@@ -201,11 +202,11 @@ class InstallOSKitReceiver:
                 self.kitops.setKitMedia('')
 
                 if res.lower() in ['y', 'yes']:
-                    print "Please insert next disk if installing from phys. media NOW"
+                    message.display("Please insert next disk if installing from phys. media NOW")
                     if not prepare_success:
-                        print "Copying from the media you specified was not " + \
-                              "successful. Try again..."
-                    print '(URI for next ISO | blank if phys. media | N to finish): '
+                        message.display("Copying from the media you specified was not " + \
+                              "successful. Try again...")
+                    message.display('(URI for next ISO | blank if phys. media | N to finish):')
                     res = sys.stdin.readline().strip()
                     if res.lower() == 'n': break
                     elif not res: res = self.determineKitMedia()
@@ -256,13 +257,13 @@ class InstallOSKitReceiver:
         while 1:
             for num_media in enumerate(sorted(choices)):
                 choice_list.append(num_media[1])
-                print '[%d] (%s) Kits:' % (num_media[0], num_media[1])
+                message.display('[%d] (%s) Kits:' % (num_media[0], num_media[1]))
 
                 for kit in choices[num_media[1]]:
-                    print '     %s-%s-%s' % (kit[1]['name'], kit[1]['version'],
-                                             kit[1]['arch'])
+                    message.display('\t%s-%s-%s' % (kit[1]['name'], kit[1]['version'],
+                                             kit[1]['arch']))
 
-            print 'Select media to add from or ENTER to quit: '
+            message.display('Select media to add from or ENTER to quit:')
             res = sys.stdin.readline().strip()
             if res == '':
                 self.kitops.unmountMedia()
@@ -334,19 +335,6 @@ class InstallOSKitReceiver:
 
         return m.hexdigest()
 
-
-    def promptYesNo(self, prompt):
-        answer = "N"
-
-        #force a single-character Yes/No response
-        while strip(upper(answer)) not in ["NO", "YES", ""]:
-            answer = raw_input("%s ? [No]" % prompt)
-
-        if upper(answer) == "YES":
-            return True
-
-        return False
-
     def closeTray(self, path):
         """Close a CD/DVD drive. Give me a path string."""
         p = subprocess.Popen('eject -t %s' % path,
@@ -360,14 +348,14 @@ class InstallOSKitReceiver:
         try:
             kit = kitops.prepareOSKit(osdistro)
         except (IOError,FileAlreadyExists,CopyError), e :
-            print 'Error reading OS disk. Please ensure that the ' + \
+            message.display('Error reading OS disk. Please ensure that the ' + \
                                      'OS disk is not corrupted or that' + \
-                                     'the CD/DVD drive is not faulty.'
+                                     'the CD/DVD drive is not faulty.')
             self.eject(cdrom)
             return
 
         except UnrecognizedKitMediaError, e:
-            print 'Media Error : %s' % e.args[0]
+            message.failure('Media Error : %s' % e.args[0], 0)
             self.eject(cdrom)
             return
 
@@ -380,7 +368,7 @@ class InstallOSKitReceiver:
             kit['ver'] != self.bootstrap_os_version or \
             kit['arch'] != self.bootstrap_os_arch:
             out, err = eject(cdrom)
-            print 'Wrong OS disk. Inserted OS disk does ' \
+            message.failure('Wrong OS disk. Inserted OS disk does ' \
                                      'not match selected operating system: %s. ' \
                                      'Please insert the correct disc.\n\n' \
                                      'Expected name: %s ver: %s arch: %s\n' \
@@ -389,14 +377,14 @@ class InstallOSKitReceiver:
                                        self.bootstrap_os_type,
                                        self.bootstrap_os_version,
                                        self.bootstrap_os_arch,
-                                       kit_name, kit['ver'], kit['arch'])
+                                       kit_name, kit['ver'], kit['arch']), 0)
 
             return
 
         disks_cksum = []
 
         # Compute the checksum of the very first Kit CD
-        print 'Starting checksum... this might take a while...'
+        message.display('Starting checksum... this might take a while...')
 
         #Checksum first disk
         cur_disk_cksum  = self.computeChecksum(kitops.mountpoint)
@@ -405,18 +393,18 @@ class InstallOSKitReceiver:
         disks_cksum.append(cur_disk_cksum)
 
 
-        print 'Copying OS kit (%s). This might take while...' % kit['name']
+        message.display('Copying OS kit (%s). This might take while...' % kit['name'])
         kitdir = self.kitops.copyOSKitMedia(kit)
 
         if sum([f.size for f in kitdir.walkfiles()]) <= 700000000: # cd provided
-            while self.promptYesNo('Any more disks for this OS kit?'):
+            while self.getYesNoAsBool('Any more disks for this OS kit?'):
                 # unmount and eject.
                 out, err = self.eject(cdrom)
                 if err:
-                    print 'CD/DVD Drive Eject Error: %s' % err
-                raw_input ('Please insert the next disk. Press enter when ready...')
+                    message.failure('CD/DVD Drive Eject Error: %s' % err, 0)
+                message.input('Please insert the next disk. Press enter when ready...')
                 self.closeTray(cdrom)
-                print 'Copying OS kit (%s). This might take a while...' % kit['name']
+                message.display('Copying OS kit (%s). This might take a while...' % kit['name'])
 
                 self.kitops.setKitMedia(cdrom)
                 self.kitops.addKitPrepare()
@@ -427,7 +415,7 @@ class InstallOSKitReceiver:
                 # If the checksum has already existed (duplicate CD), then prompt user to insert the next CD
                 # for the current OS kit
                 if cur_disk_cksum in disks_cksum:
-                    raw_input ('Duplicate CD Inserted. This CD has already been copied. Please press ENTER to proceed with the installation for this OS kit')
+                    message.input('Duplicate CD Inserted. This CD has already been copied. Please press ENTER to proceed with the installation for this OS kit')
 
                 disks_cksum.append(cur_disk_cksum)
 
@@ -570,7 +558,7 @@ class InstallOSKitReceiver:
     def prompt_for_kit(self):
         kit_iso = ""
         while not os.path.exists(kit_iso):
-            kit_iso = raw_input("Please provide path to ISO image or mount point: ")
+            kit_iso = message.input("Please provide path to ISO image or mount point: ")
             if not os.path.exists(kit_iso):
                 print("The specified path or file does not exist.")
 

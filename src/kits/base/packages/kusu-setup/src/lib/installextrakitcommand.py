@@ -19,6 +19,7 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 from command import Command
+import message
 
 class InstallExtraKitCommand(Command):
     """
@@ -34,34 +35,34 @@ class InstallExtraKitCommand(Command):
     def _prompt_for_additional_kit(self):
 
         while True:
-            value = raw_input('Do you want to add any additional kits[Y|N]: ')
+            value = message.input('\nDo you want to add any additional kits[Y|N]: ')
             if value.lower() in ['y', 'yes']:
                 try:
-                    value = int(raw_input('Select the kit media to add the kit from: \n' +
-                                          '1)\tCD/DVD drive \n' +
-                                          '2)\tISO image or mount point\n' +
+                    value = int(message.input('\nSelect the kit media to add the kit from: \n'
+                                          '1)\tCD/DVD drive \n'
+                                          '2)\tISO image or mount point\n'
                                           '>> '))
                 except:
-                    print "Invalid option is given."
+                    message.display("Invalid option is given.")
                     continue
 
                 if value == 1:
                     #Prompt for and install the additional kits
-                    raw_input ("Insert the CD/DVD media containing your kits. Press ENTER to continue...")
+                    message.input("Insert the CD/DVD media containing your kits. Press ENTER to continue...")
                     status, msg = self._receiver.install_kits('cdrom')
                     if not status:
-                        print msg
+                        message.display(msg)
                 elif value == 2:
                     status, msg = self._receiver.install_kits('iso')
                     if not status:
-                        print msg
+                        message.display(msg)
                 else:
-                    print "Invalid option is given."
+                    message.display("Invalid option is given.")
                     continue
             elif value.lower() in ['n', 'no']:
                 break
             else:
-                print "Wrong Input enter [Y|N]"
+                message.display("Wrong Input enter [Y|N]")
                 continue
 
         self._proceedStatus = True
