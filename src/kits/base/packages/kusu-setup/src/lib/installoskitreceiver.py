@@ -393,7 +393,7 @@ class InstallOSKitReceiver:
         disks_cksum.append(cur_disk_cksum)
 
 
-        message.display('Copying OS kit (%s). This might take while...' % kit['name'])
+        message.display('Copying OS kit (%s). This might take a while...' % kit['name'])
         kitdir = self.kitops.copyOSKitMedia(kit)
 
         if sum([f.size for f in kitdir.walkfiles()]) <= 700000000: # cd provided
