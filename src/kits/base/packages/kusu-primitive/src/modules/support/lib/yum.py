@@ -26,12 +26,13 @@ def import_elementtree():
         try:
             import cElementTree
         except:
-            import ElementTree
+            import ElementTree as cElementTree
     elif version_info >= (2,5):
         try:
             from xml.etree import cElementTree
         except:
-            from xml.etree import ElementTree
+            from xml.etree import ElementTree as cElementTree
+    globals()['cElementTree'] = cElementTree
 
 class YumRepo:
 
