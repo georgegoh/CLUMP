@@ -151,7 +151,6 @@ install -m644 lib/initkusudbcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/boots
 install -m644 lib/initkusudbreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/installerinitreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/installextrakitcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/installextrakitreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/installoskitcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/installoskitreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/niccheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
@@ -167,7 +166,6 @@ install -m644 lib/sanitizeinstallcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/
 install -m644 lib/selinuxcheckcommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/setup_errors.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/systemsettingscommand.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
-install -m644 lib/systemsettingsreceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/timezonereceiver.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap
 install -m644 lib/__init__.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/bootstrap/setup
