@@ -39,6 +39,8 @@ try:
 except:
     from popen5 import subprocess
 
+RHEL_FAMILY = 'rhelfamily'
+
 class InstallOSKitReceiver(object):
     """
     This class prompts for, and installs the OS kit.
@@ -100,6 +102,7 @@ class InstallOSKitReceiver(object):
             self.kitops.unmountMedia()
             return False, "\nNot able to add OS Kit: %s" % msg
 
+        message.display("\nFinished Copying the OS kit.\n")
         return True, ''
 
     def eject(self, path):
@@ -164,8 +167,7 @@ class InstallOSKitReceiver(object):
 
         return m.hexdigest()
 
-    def _check_kit_distro_and_arch(self, distro_name, distro_arch, distro_ver):
-
+    def _check_kit_distro_and_arch(self, distro, distro_arch, distro_ver):
 
         distro_family = distro
 
