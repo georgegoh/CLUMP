@@ -35,7 +35,6 @@ try:
 except:
     from popen5 import subprocess
 
-FIND_COMMAND = 'find -P %s -name kit-base*.rpm'
 ZYPPER_CMD = '/usr/bin/zypper --non-interactive --no-gpg-checks'
 ZYPPER_SERVICE_ADD_OPTIONS = 'service-add -t YaST'
 KUSU_COMPONENTS = 'component-base-installer component-base-node component-gnome-desktop'
