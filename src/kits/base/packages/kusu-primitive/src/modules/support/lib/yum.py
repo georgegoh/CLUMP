@@ -1,10 +1,10 @@
-#!/usr/bin/env python 
-# -*- coding: utf-8 -*- 
-# 
-# $Id$ 
-# 
-# Copyright (C) 2010 Platform Computing Inc. 
-# 
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# $Id$
+#
+# Copyright (C) 2010 Platform Computing Inc.
+#
 
 import sys
 import md5
@@ -19,18 +19,19 @@ from primitive.support import rpmtool
 from primitive.support.proxy import Proxy
 from primitive.fetchtool.commands import FetchCommand
 
-version_info = sys.version_info[:2]
+def import_elementtree():
+    version_info = sys.version_info[:2]
 
-if version_info < (2,5):
-    try:
-        import cElementTree
-    except:
-        import ElementTree
-elif version_info >= (2,5):
-    try:
-        from xml.etree import cElementTree
-    except:
-        from xml.etree import ElementTree
+    if version_info < (2,5):
+        try:
+            import cElementTree
+        except:
+            import ElementTree
+    elif version_info >= (2,5):
+        try:
+            from xml.etree import cElementTree
+        except:
+            from xml.etree import ElementTree
 
 class YumRepo:
 
@@ -39,7 +40,7 @@ class YumRepo:
         self.repo = {}
         self.primary = {}
         self.proxy = proxy
-
+        import_elementtree()
 
     def getRepoMD(self):
         """Get the repodata index file"""
@@ -56,14 +57,14 @@ class YumRepo:
         status , dest = fc.execute()
 
         tmppath = path(tmpdir/ 'repomd.xml')
-       
+
         if not tmppath.isfile():
             self.cleanup(tmpdir)
-            return self.repo            
+            return self.repo
 
         f = open(tmpdir / 'repomd.xml')
 
-        for event, elem in cElementTree.iterparse(f): 
+        for event, elem in cElementTree.iterparse(f):
             if self.cleanNS(elem) == 'data':
                 type = elem.get('type')
                 if not self.repo.has_key(type):
@@ -84,7 +85,7 @@ class YumRepo:
                     elif tag =='open-checksum':
                         self.repo[type]['open-checksum'] = (elem.get('type'),elem.text)
                     else: pass
-                
+
         self.cleanup(tmpdir)
         return self.repo
 
@@ -97,7 +98,7 @@ class YumRepo:
                 return self.primary
 
         primaryFile = self.uri + '/' + self.repo['primary']['location']
-        
+
         checksumType = self.repo['primary']['checksum'][0]
         checksum = self.repo['primary']['checksum'][1]
 
@@ -127,7 +128,7 @@ class YumRepo:
 
             if self.getCheckSum(checksumType, blob) == checksum:
                 blob.seek(0)
-                for event, elem in cElementTree.iterparse(blob): 
+                for event, elem in cElementTree.iterparse(blob):
                     if self.cleanNS(elem) == 'package':
                         for elem in elem.getchildren():
                             tag = self.cleanNS(elem)
@@ -147,7 +148,7 @@ class YumRepo:
                                 pkgChecksumType = elem.get('type')
                                 pkgChecksum  = elem.text
 
-                        r = rpmtool.RPM(name=name, 
+                        r = rpmtool.RPM(name=name,
                                         version=version,
                                         release=release,
                                         arch=arch,
@@ -172,19 +173,19 @@ class YumRepo:
         else:
             self.cleanup(tmpdir)
             raise repodataChecksumException, primaryFile
-        
+
     def cleanNS(self, elem):
         """Clean up namespace"""
         tag = elem.tag
 
-        if tag.find('}') == -1: 
+        if tag.find('}') == -1:
             return tag
         else:
             return tag.split('}')[1]
 
     def getCheckSum(self, checksumType, file):
-        """Get the md5 or sha checksum from a file object 
-           The file param can be a regular filename, URI, a StringIO 
+        """Get the md5 or sha checksum from a file object
+           The file param can be a regular filename, URI, a StringIO
            object, or any other object which simulates a file."""
 
         blksize = 1024
@@ -194,12 +195,12 @@ class YumRepo:
             f = StringIO.StringIO(tools.getFile(file))
         else:
             f = file
-        
+
         if checksumType == 'md5':
             sum = md5.new()
         else:
             sum = sha.new()
-        
+
         block = True
         while block:
             block = f.read(blksize)
