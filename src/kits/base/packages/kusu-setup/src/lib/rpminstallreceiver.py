@@ -63,7 +63,8 @@ class RpmInstallReceiver(object):
         if distro in osfamily.getOSNames('rhelfamily') + ['fedora']:
             return self._install_rhel_rpms(repoid)
         else:
-            return self._install_sles_rpms(repoid)
+            return self._install_sles_rpms(repoid) and \
+                    self._update_syslog_ng_conf()
 
     def _install_rhel_rpms(self, repoid):
         self._repoTemplate = '''[bootstraprepo]
@@ -113,4 +114,28 @@ gpgcheck=0
             message.failure("\nNot able to install RPMs: %s" % err)
             return False
 
+        if install_cmd.returncode == 0:
+            self._disableIptablesKusurc()
+
         return True
+
+    def _update_syslog_ng_conf(self):
+        """
+        Updates /etc/syslog-ng/syslog-ng.conf file using SuSEconfig.
+
+        SuSEconfig will regenerate syslog-ng.conf using options from
+        /etc/sysconfig/syslog and the template file
+        /etc/syslog-ng/syslog-ng.conf.in.
+
+        If this step is not done, dhcpd (when running chrooted)
+        will not be able to log to syslog whenever syslog-ng
+        is restarted.
+        """
+        cmd = "/sbin/SuSEconfig --module syslog-ng"
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if p.returncode:
+            message.warning("\nNot able to update syslog-ng.conf: %s" % err)
+            return False
+        return True
+
