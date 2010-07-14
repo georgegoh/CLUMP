@@ -170,9 +170,9 @@ class InstallOSKitReceiver:
             except Exception, msg:
                 return False, msg
 
-            res = ''
-            while 1:    #loop to go through all the media disks...
-                prepare_success = True
+
+
+
                 if res:
                     self.kitops.setKitMedia(res)
                     try:
@@ -191,15 +191,15 @@ class InstallOSKitReceiver:
                         msg = '\nFailed to add OS kit: %s' % e.args[0]
                         return False, msg
 
+                # We need to clear the kit media now that we're done with it
+                self.kitops.setKitMedia('')
+
                 answer = 'FAKE_ANSWER'
                 while answer.strip().lower() not in ['no', 'yes', 'y', 'n', '']:
-                    answer = self.getYesNoAsBool("Any more disks for this OS kit")
+                    answer = message.input("Any more disks for this OS kit ? (Y/[N]):")
 
                 if answer.strip().lower() in ['no','n', '']:
                     break
-
-                # We need to clear the kit media now that we're done with it
-                self.kitops.setKitMedia('')
 
                 if res.lower() in ['y', 'yes']:
                     message.display("\nPlease insert next disk if installing from phys. media NOW")
@@ -210,6 +210,8 @@ class InstallOSKitReceiver:
                     res = sys.stdin.readline().strip()
                     if res.lower() == 'n': break
                     elif not res: res = self.determineKitMedia()
+
+
 
             self.associateComps()
             self.updateNodeGroupImages(kit['initrd'], kit['kernel'], kit['longname'])
@@ -384,7 +386,7 @@ class InstallOSKitReceiver:
         disks_cksum = []
 
         # Compute the checksum of the very first Kit CD
-        message.display('Starting checksum... this might take a while...')
+        message.display('\nStarting checksum... this might take a while...')
 
         #Checksum first disk
         cur_disk_cksum  = self.computeChecksum(kitops.mountpoint)
@@ -393,11 +395,11 @@ class InstallOSKitReceiver:
         disks_cksum.append(cur_disk_cksum)
 
 
-        message.display('Copying OS kit (%s). This might take a while...' % kit['name'])
+        message.display('\nCopying OS kit (%s). This might take a while...' % kit['name'])
         kitdir = self.kitops.copyOSKitMedia(kit)
 
         if sum([f.size for f in kitdir.walkfiles()]) <= 700000000: # cd provided
-            while self.getYesNoAsBool('Any more disks for this OS kit?'):
+            while message.display('Any more disks for this OS kit? (Y/[N]):'):
                 # unmount and eject.
                 out, err = self.eject(cdrom)
                 if err:

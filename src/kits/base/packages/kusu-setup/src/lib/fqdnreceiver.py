@@ -53,7 +53,7 @@ class FQDNReceiver(object):
 
        return fqdn_probed
 
-    def probe_fqdn(self, ip):
+    def _probe_fqdn(self, ip):
 
         if not path(HOSTS).exists():
             fqdn_probed = False

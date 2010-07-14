@@ -28,7 +28,6 @@ except ImportError:
 from operator import itemgetter
 from setup_errors import KusuProbePluginError
 from path import path
-import message
 
 DF_COMMAND = 'df -lh '
 MOUNT_COMMAND = 'mountpoint '
