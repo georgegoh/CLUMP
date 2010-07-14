@@ -165,21 +165,22 @@ class InstallOSKitReceiver(object):
         return m.hexdigest()
 
     def _check_kit_distro_and_arch(self, distro_name, distro_arch, distro_ver):
-        distro_family = distro_name # Assume that the family name is passed
+
+
+        distro_family = distro
+
         if not distro_ver:
             distro_ver = self.bootstrap_os_version # For base kit don't need to check version
 
-        for key, values in osfamily_dict.items():
-            if self.bootstrap_os_type in values:
-                self.bootstrap_family = key
+        if self.bootstrap_os_type != distro:
+            if self.bootstrap_os_type in osfamily.getOSNames(RHEL_FAMILY) + ['fedora']:
+                self.bootstrap_family = RHEL_FAMILY
+            if distro in osfamily.getOSNames(RHEL_FAMILY) + ['fedora']:
+                distro_family = RHEL_FAMILY
+            if distro_family == self.bootstrap_family:
+                distro = self.bootstrap_os_type
 
-            if distro_name in values:
-                distro_family = key
-
-        if self.bootstrap_family == distro_family:
-            distro_name = self.bootstrap_os_type
-
-        if distro_name != self.bootstrap_os_type or \
+        if distro != self.bootstrap_os_type or \
                 distro_ver != self.bootstrap_os_version or \
                 distro_arch != self.bootstrap_os_arch:
             message.failure('Wrong OS disk. Inserted OS disk does ' \
@@ -191,7 +192,7 @@ class InstallOSKitReceiver(object):
                              self.bootstrap_os_type,
                              self.bootstrap_os_version,
                              self.bootstrap_os_arch,
-                             distro_name, distro_ver, distro_arch), 0)
+                             distro, distro_ver, distro_arch), 0)
 
             return False
 

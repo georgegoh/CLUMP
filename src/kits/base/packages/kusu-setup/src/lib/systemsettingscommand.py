@@ -28,14 +28,13 @@ class SystemSettingsCommand(Command):
     """
     This is the command class for checking system settings.
     """
-    def __init__(self, networkReceiver, kb_receiver, locale_receiver,
-            timezone_receiver, fqdn_receiver, diskspace_receiver):
+    def __init__(self, installer_receiver, networkReceiver, locale_receiver,
+            fqdn_receiver, diskspace_receiver):
         super(SystemSettingsCommand, self).__init__()
         self._networkReceiver = networkReceiver
 
-        self._kb_receiver = kb_receiver
+        self._installer_receiver = installer_receiver
         self._locale_receiver = locale_receiver
-        self._timezone_receiver = timezone_receiver
         self._fqdn_receiver = fqdn_receiver
         self._diskspace_receiver = diskspace_receiver
 
@@ -107,15 +106,10 @@ class SystemSettingsCommand(Command):
             message.success()
 
         try:
-            self._kb_receiver.probe_keyboard()
-            self.keyboardLayout = self._kb_receiver.keyboardLayout
-
+            self.keyboardLayout = self._installer_receiver.keyboardLayout
+            self.timezone = self._installer_receiver.timezone
             self._locale_receiver.probe_locale()
             self.language = self._locale_receiver.language
-
-            self._timezone_receiver.probe_timezone()
-            self.timezone = self._timezone_receiver.timezone
-
             self._proceedStatus = True
 
         except KusuProbePluginError, msg:

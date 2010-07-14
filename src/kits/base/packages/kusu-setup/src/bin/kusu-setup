@@ -76,9 +76,7 @@ class KusuSetup(object):
         self._rpmInstallReceiver = rpminstallreceiver.RpmInstallReceiver()
 
         self._fqdn_receiver = fqdnreceiver.FQDNReceiver()
-        self._timezone_receiver = timezonereceiver.TimezoneReceiver()
         self._language_receiver = languagereceiver.LanguageReceiver()
-        self._keyboard_receiver = keyboardreceiver.KeyboardReceiver()
 
         atexit.register(self.cleanup)
 
@@ -131,7 +129,7 @@ class KusuSetup(object):
             self._networkReceiver = networkreceiver.NetworkReceiver(rpmCheck.distroName)
 
             ##Do discovery of system settings
-            systemSettings = systemsettingscommand.SystemSettingsCommand(self._networkReceiver, self._keyboard_receiver, self._language_receiver, self._timezone_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
+            systemSettings = systemsettingscommand.SystemSettingsCommand(self._installerInitReceiver, self._networkReceiver, self._language_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
             systemSettings.execute()
             if not systemSettings.proceedStatus:
                message.failure("%s" % systemSettings.quitMessage)

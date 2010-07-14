@@ -24,6 +24,19 @@ class InstallerInitReceiver(object):
 
     def __init__(self):
         self.distroName, self.distroRelease, self.distroArch = probe.OS()
+        self.keyboard_layout = probe.getKeyboard()
+        self._timezone, self._utc = probe.getTimezone()
+
+    def get_keyboard_layout(self):
+        """ This method returns the keyboard layout as probed by this class. """
+        return self.keyboard_layout
+
+    def get_time_zone(self):
+        """ Interface to expose the timezone property """
+        return {'zone': self._timezone, 'utc' : self._utc, 'ntp': 'pool.ntp.org'}
+
+    timezone = property(get_time_zone)
+    keyboardLayout = property(get_keyboard_layout)
 
 if __name__ == '__main__':
     probe_os = InstallerInitReceiver()

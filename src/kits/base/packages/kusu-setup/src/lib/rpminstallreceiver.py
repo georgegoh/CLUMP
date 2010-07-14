@@ -35,6 +35,11 @@ try:
 except:
     from popen5 import subprocess
 
+FIND_COMMAND = 'find -P %s -name kit-base*.rpm'
+ZYPPER_CMD = '/usr/bin/zypper --non-interactive --no-gpg-checks'
+ZYPPER_SERVICE_ADD_OPTIONS = 'service-add -t YaST'
+KUSU_COMPONENTS = 'component-base-installer component-base-node component-gnome-desktop'
+
 class RpmInstallReceiver(object):
 
     def _disableIptablesKusurc(self):
@@ -55,6 +60,12 @@ class RpmInstallReceiver(object):
         name, ver, arch = softprobe.OS()
         distro = name.lower()
 
+        if distro in osfamily.getOSNames() + ['fedora']:
+            self._install_rhel_rpms(repodir)
+        else:
+            self._install_sles_rpms(repodir)
+
+    def _install_rhel_rpms(self, repoid):
         self._repoTemplate = '''[bootstraprepo]
 name=BootstrapRepo
 baseurl=file://///depot/repos/%s%s
@@ -68,7 +79,7 @@ gpgcheck=0
         yum_file.file.writelines(repoText)
         yum_file.flush()
 
-        yumCmd = subprocess.Popen("yum -c %s -y install component-base-installer component-base-node component-gnome-desktop" % yum_file.name, shell=True, stdout=subprocess.PIPE)
+        yumCmd = subprocess.Popen("yum -c %s -y install %s " % (yum_file.name, KUSU_COMPONENTS), shell=True, stdout=subprocess.PIPE)
         result, code = yumCmd.communicate()
 
         yum_file.close()
@@ -84,3 +95,23 @@ gpgcheck=0
 
         return yumCmd.returncode == 0 #assume success if returncode == 0
 
+    def _install_sles_rpms(self, repoid):
+        repo_dir = "file:///depot/repos/%s" % repoid
+        # Add service
+        zypper_service_add = "%s %s %s" % (ZYPPER_CMD, ZYPPER_SERVICE_ADD_OPTIONS, repoid)
+        service_add_cmd = subprocess.Popen(zypper_service_add, shell=True, stdout=subprocess.PIPE, stderr=subprocess.pipe)
+        out, err = service_add_cmd.communicate()
+
+        if service_add_cmd.returncode:
+            message.failure("\n%s" % err)
+            return False
+
+        zypper_install_components = "%s install %s" % (ZYPPER_CMD, KUSU_COMPONENTS)
+        install_cmd = subprocess.Popen(zypper_install_components, shell=True, stdout=subprocess.PIPE, stderr=subprocess.pipe)
+        out, err = install_cmd.communicate()
+
+        if install_cmd.returncode:
+            message.failure("\n%s" % err)
+            return False
+
+        return True
