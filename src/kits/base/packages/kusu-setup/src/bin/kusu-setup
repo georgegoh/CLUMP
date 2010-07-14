@@ -24,7 +24,6 @@ import time
 import atexit
 
 sys.path.append('/opt/kusu/bootstrap/lib/python')
-sys.path.append('/opt/kusu/bootstrap/lib/python/pysrc')
 sys.path.append('/opt/kusu/bootstrap/lib/python2.4/site-packages/')
 
 from path import path
@@ -41,6 +40,7 @@ except:
     from popen5 import subprocess
 
 KUSURC_COMMAND = ". /opt/kusu/bin/kusuenv.sh; /opt/kusu/bin/kusurc"
+SQLITE_KUSUDB = path('/root/kusu.db')
 
 class KusuSetup(object):
 
@@ -53,20 +53,20 @@ class KusuSetup(object):
         os.environ['KUSU_ROOT'] = '/opt/kusu/bootstrap/'
 
         #add our sbin folder to pickup genupdatesimg
-        os.environ['PATH'] = os.environ['PATH'] + ':/opt/kusu/bootstrap/sbin:'
+        os.environ['PATH'] = os.environ['PATH'] + ':/opt/kusu/bootstrap/sbin'
 
         #build up a PYTHONPATH so sub/shell processes have access to our libs
         os.environ['PYTHONPATH'] = ""
         for item in sys.path:
             os.environ['PYTHONPATH'] = os.environ['PYTHONPATH'] + ":%s" % item
 
-        if os.path.exists('/root/kusu.db'):
-            message.display("\nDetected stale sqlite database. Removing...")
+        if SQLITE_KUSUDB.exists():
+            message.display("\nRemoving stale Kusu sqlite database")
             try:
-                os.remove('/root/kusu.db')
+                SQLITE_KUSUDB.remove()
                 message.success()
             except:
-                message.failure("An error has occured removing /root/kusu.db")
+                message.failure("An error has occured removing %s" % SQLITE_KUSUDB)
 
         self._cleanupReceiver = cleanupreceiver.CleanupReceiver()
         self._installerInitReceiver = installerinitreceiver.InstallerInitReceiver()
@@ -132,16 +132,15 @@ class KusuSetup(object):
             systemSettings = systemsettingscommand.SystemSettingsCommand(self._installerInitReceiver, self._networkReceiver, self._language_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
             systemSettings.execute()
             if not systemSettings.proceedStatus:
-               message.failure("%s" % systemSettings.quitMessage)
-               sys.exit(1)
+                message.failure("%s" % systemSettings.quitMessage)
+                sys.exit(1)
 
             ##Check for minimum RAM requirement
             ##
             ramCheck = ramcheckcommand.RamCheckCommand(self._ramCheckReceiver)
             ramCheck.execute()
             if not ramCheck.proceedStatus:
-               message.warning("%s" % ramCheck.quitMessage)
-              # sys.exit(1)
+                message.warning("%s" % ramCheck.quitMessage)
 
             ##Check for sufficient diskspace
             ##
@@ -175,15 +174,16 @@ class KusuSetup(object):
                 sys.exit(1)
 
             ## Initialize KusuDB
-            ## The reason for this "late" initialization is due to DB() class + SQLAlchemy's quirkiness
-            ## w.r.t. multiple db connections in the same process
+            ## The reason for this "late" initialization is due to
+            ## DB() class + SQLAlchemy's quirkiness w.r.t. multiple
+            ## db connections in the same process.
             import sqlalchemy as sa
 
             # Clear all mappers and init them
             for key in sa.orm.mapper_registry.keys():
                 sa.orm.mapper_registry.pop(key)
 
-            self._db = db.DB('sqlite', path('/root/kusu.db'))
+            self._db = db.DB('sqlite', SQLITE_KUSUDB)
 
             self._rfactory = RepoFactory(self._db)
 

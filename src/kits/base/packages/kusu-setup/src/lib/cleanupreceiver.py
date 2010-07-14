@@ -110,7 +110,7 @@ class CleanupReceiver(object):
         dirtyFlag = False
 
         #Check for presence of /depot
-        message.display("\nChecking for presence of '/depot' folder")
+        message.display("Checking for presence of '/depot' folder")
         if os.path.exists("/depot"):
             dirtyFlag = True
             self._need_to_remove_depot = True
@@ -119,7 +119,7 @@ class CleanupReceiver(object):
             message.success()
 
         #Check for presence of kusudb
-        message.display("\nChecking for presence of kusudb database")
+        message.display("Checking for presence of kusudb database")
 
         if self.dbIsAvailable():
             dirtyFlag = True
@@ -129,7 +129,7 @@ class CleanupReceiver(object):
             message.success()
 
         #Check for presence of kusu component-* rpms
-        message.display("\nChecking for presence of Kusu RPMs")
+        message.display("Checking for presence of Kusu RPMs")
 
         if self.hasRPM("component-base-installer") or \
                 self.hasRPM("component-base-node") or \
@@ -174,13 +174,6 @@ class CleanupReceiver(object):
 
                 except Exception , msg:
                     message.failure("Not able to drop kusudb. %s" % msg)
-
-            #if os.path.exists('/root/kusu.db'):
-            #    print "Removing sqlite database"
-            #    try:
-            #        os.remove('/root/kusu.db')
-            #    except:
-            #        print "An error has occured removing /root/kusu.db"
 
             #remove /depot folder
             if self._need_to_remove_depot:

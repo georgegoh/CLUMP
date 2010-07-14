@@ -36,7 +36,7 @@ class SELinuxCheckCommand(Command):
 
         else:
             self._proceedStatus = True
-            message.success('')
+            message.success()
 
 
 

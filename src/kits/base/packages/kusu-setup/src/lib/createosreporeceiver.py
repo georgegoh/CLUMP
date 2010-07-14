@@ -22,7 +22,6 @@ import os
 import sys
 
 sys.path.append('/opt/kusu/bootstrap/lib/python')
-sys.path.append('/opt/kusu/bootstrap/lib/python/pysrc')
 sys.path.append('/opt/kusu/bootstrap/primitive/lib/python2.4/site-packages/')
 
 from path import path
