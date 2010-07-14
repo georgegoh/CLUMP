@@ -33,8 +33,8 @@ This package enables the bootstrap installation of KUSU.
 
 %prep
 %setup -n %{name} -q
-patch createrepo/src/bin/createrepo createrepo/custom/0.4.8/createrepo.patch
-patch createrepo/src/bin/modifyrepo createrepo/custom/0.4.8/modifyrepo.patch
+patch kusu-createrepo/src/bin/createrepo kusu-createrepo/custom/0.4.8/createrepo.patch
+patch kusu-createrepo/src/bin/modifyrepo kusu-createrepo/custom/0.4.8/modifyrepo.patch
 
 %build
 make nodeps
@@ -211,12 +211,12 @@ install -m644 kusu-repoman/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
 install -m644 kusu-driverpatch/src/lib/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/kusu/driverpatch
 
-# for pulling in createrepo
+# for pulling in kusu-createrepo
 install -d $RPM_BUILD_ROOT/%{_kusu}/lib/python/createrepo
 install -d $RPM_BUILD_ROOT/%{_kusu}/sbin
-install -m755 createrepo/src/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/createrepo
-install -m755 createrepo/src/bin/createrepo $RPM_BUILD_ROOT/%{_kusu}/sbin
-install -m755 createrepo/src/bin/modifyrepo $RPM_BUILD_ROOT/%{_kusu}/sbin
+install -m755 kusu-createrepo/src/*.py $RPM_BUILD_ROOT/%{_kusu}/lib/python/createrepo
+install -m755 kusu-createrepo/src/bin/createrepo $RPM_BUILD_ROOT/%{_kusu}/sbin
+install -m755 kusu-createrepo/src/bin/modifyrepo $RPM_BUILD_ROOT/%{_kusu}/sbin
 
 %pre
 
