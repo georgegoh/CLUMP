@@ -43,7 +43,7 @@ except:
 KUSURC_COMMAND = ". /opt/kusu/bin/kusuenv.sh; /opt/kusu/bin/kusurc"
 
 class KusuSetup:
-    
+
     def __init__(self):
         #set KUSU_DIST environment so db bootstrap works
         name, ver, arch = softprobe.OS()
@@ -68,8 +68,8 @@ class KusuSetup:
                 message.failure("An error has occured removing /root/kusu.db")
 
         self._cleanupReceiver = cleanupreceiver.CleanupReceiver()
-        self._installerInitReceiver = installerinitreceiver.InstallerInitReceiver() 
-        self._systemSettingsReceiver = systemsettingsreceiver.SystemSettingsReceiver() 
+        self._installerInitReceiver = installerinitreceiver.InstallerInitReceiver()
+        self._systemSettingsReceiver = systemsettingsreceiver.SystemSettingsReceiver()
         self._ramCheckReceiver = ramcheckreceiver.RamCheckReceiver()
 
         self._installExtraKitReceiver = installextrakitreceiver.InstallExtraKitReceiver()
@@ -81,7 +81,6 @@ class KusuSetup:
         self._language_receiver = languagereceiver.LanguageReceiver()
         self._keyboard_receiver = keyboardreceiver.KeyboardReceiver()
 
-
         atexit.register(self.cleanup)
 
         self._installCompleted = False
@@ -90,7 +89,7 @@ class KusuSetup:
         if not self._installCompleted:
             cleanupCommand = cleanupcommand.CleanupCommand(self._cleanupReceiver)
             cleanupCommand.execute()
-   
+
     def runKusuRC(self):
         cmd=KUSURC_COMMAND
 
@@ -103,155 +102,150 @@ class KusuSetup:
             time.sleep(1)
 
     def installKusu(self):
-   
         try:
-                selinuxstatus = selinuxcheckcommand.SELinuxCheckCommand()
-                selinuxstatus.execute()
-                if not selinuxstatus.proceedStatus:
-                    message.failure("%s" % selinuxstatus.quitMessage)
-                    sys.exit(1)
-            
-                sanitizeInstall = sanitizeinstallcommand.SanitizeInstallCommand(self._cleanupReceiver)
-                sanitizeInstall.execute()
+            selinuxstatus = selinuxcheckcommand.SELinuxCheckCommand()
+            selinuxstatus.execute()
+            if not selinuxstatus.proceedStatus:
+                message.failure("%s" % selinuxstatus.quitMessage)
+                sys.exit(1)
 
-                if not sanitizeInstall.proceedStatus:
-                    print sanitizeInstall.quitMessage
-                    ##Quitting on sanitize implies an existing install. Don't do cleanup
-                    ##
-                    self._installCompleted = True
-                    sys.exit(0)
+            sanitizeInstall = sanitizeinstallcommand.SanitizeInstallCommand(self._cleanupReceiver)
+            sanitizeInstall.execute()
 
-                ##installer init
-                ## 1) verify that installer is compatible with target OS
-                ## 2) check whether this is a supported OS
-                rpmCheck = rpmcheckcommand.RpmCheckCommand(self._installerInitReceiver)
-                rpmCheck.execute()
-                if not rpmCheck.proceedStatus:
-                    message.failure("%s" % rpmCheck.quitMessage)
-                    sys.exit(1)
-
-                ##Create Network Receiver
-                self._networkReceiver = networkreceiver.NetworkReceiver(rpmCheck.distroName)
-                
-                ##Do discovery of system settings  
-                systemSettings = systemsettingscommand.SystemSettingsCommand(self._networkReceiver, self._keyboard_receiver, self._language_receiver, self._timezone_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
-                systemSettings.execute()
-                if not systemSettings.proceedStatus:
-                   message.failure("%s" % systemSettings.quitMessage)
-                   sys.exit(1)
-
-                ##Check for minimum RAM requirement
+            if not sanitizeInstall.proceedStatus:
+                print sanitizeInstall.quitMessage
+                ##Quitting on sanitize implies an existing install. Don't do cleanup
                 ##
-                ramCheck = ramcheckcommand.RamCheckCommand(self._ramCheckReceiver)
-                ramCheck.execute()
-                if not ramCheck.proceedStatus:
-                   message.warning("%s" % ramCheck.quitMessage)
-                  # sys.exit(1)
-
-                ##Check for sufficient diskspace
-                ##
-                diskSpaceCheck = diskspacecheckcommand.DiskSpaceCheckCommand(self._diskSpaceCheckReceiver)
-                diskSpaceCheck.execute()
-                if not diskSpaceCheck.proceedStatus:
-                    message.failure("%s" % diskSpaceCheck.quitMessage)
-                    sys.exit(1)
-         
-                ##Check if we have enough NICs
-                nicCheck = niccheckcommand.NicCheckCommand(self._networkReceiver, systemSettings.configuredNicCount)
-                nicCheck.execute()
-                if not nicCheck.proceedStatus:
-                    message.failure("%s" % nicCheck.quitMessage)
-                    sys.exit(1)
-         
-                ##Check our DHCP config
-                ##
-                dhcpCheck = dhcpcheckcommand.DhcpCheckCommand(self._networkReceiver)
-                dhcpCheck.execute()
-                if not dhcpCheck.proceedStatus:
-                    message.failure("%s" % dhcpCheck.quitMessage)
-                    sys.exit(1)
-         
-                ## Check for timestamp, language, FQDN, Keyboard
-                ##
-                envCheck = envcheckcommand.EnvCheckCommand(nicCheck.provisionInterfaceTuple, nicCheck.publicInterfaceTuple, self._fqdn_receiver)
-                envCheck.execute()
-                if not envCheck.proceedStatus:
-                    message.failure("%s" % envCheck.quitMessage)
-                    sys.exit(1)
-
-        
-                ## Initialize KusuDB 
-                ## The reason for this "late" initialization is due to DB() class + SQLAlchemy's quirkiness
-                ## w.r.t. multiple db connections in the same process
-                import sqlalchemy as sa
-
-                # Clear all mappers and init them
-                for key in sa.orm.mapper_registry.keys():
-                    sa.orm.mapper_registry.pop(key)
-
-                self._db = db.DB('sqlite', path('/root/kusu.db'))
-
-                self._rfactory = RepoFactory(self._db)
-
-
-                self._db.createTables()
-                self._db.bootstrap()
-
-                self._initKusuDBReceiver = initkusudbreceiver.InitKusuDBReceiver(self._db)
-
-                initKusuDB = initkusudbcommand.InitKusuDBCommand(self._initKusuDBReceiver, nicCheck, dhcpCheck, envCheck, systemSettings)
-                initKusuDB.execute()
-                if not initKusuDB.proceedStatus:
-                    message.failure("%s" % initKusuDB.quitMessage)  
-                    sys.exit(1)
-         
-                self._createOSRepoReceiver = createosreporeceiver.CreateOSRepoReceiver(self._db)
-                self._installOSKitReceiver = installoskitreceiver.InstallOSKitReceiver(self._db)
- 
-        
-                ##Prompt for, and install OS and Base kits
-                ##
-                installOSKit = installoskitcommand.InstallOSKitCommand(self._installOSKitReceiver)
-                installOSKit.execute()
-                if not installOSKit.proceedStatus:
-                    message.failure("%s" % installOSKit.quitMessage)
-                    sys.exit(1)
-         
-                ##Prompt for, and install additional kits
-                installExtraKit = installextrakitcommand.InstallExtraKitCommand(self._installOSKitReceiver)
-                installExtraKit.execute()
-                if not installExtraKit.proceedStatus:
-                    message.failure("%s" % installExtraKit.quitMessage)
-                    sys.exit(1)
-                  
-                
-                ## Create the OS repository
-                ## 
-                createOSRepo = createosrepocommand.CreateOSRepoCommand(self._createOSRepoReceiver)
-                createOSRepo.execute()
-                if not createOSRepo.proceedStatus:
-                    message.failure("%s" % createOSRepo.quitMessage)
-                    sys.exit(1)
-
-                #refresh the repo
-                print "Refreshing the repository [%s]. This will take a while..." % createOSRepo.default_repo_name
-                self._repo = self._rfactory.getRepo(createOSRepo.default_repo_id)
-                self._repo.refresh(createOSRepo.default_repo_id)
-
-                #Install Kusu RPMs from our local OS repo
-                rpmInstall = rpminstallcommand.RpmInstallCommand(self._rpmInstallReceiver, createOSRepo.default_repo_id)
-                rpmInstall.execute()
-                if not rpmInstall.proceedStatus:
-                    print rpmInstall.quitMessage
-                    sys.exit(1)
-
-                ##Run all the kusurc scripts  
-                print ("Running kusurc scripts to finalize installation.")
-                self.runKusuRC()
- 
                 self._installCompleted = True
+                sys.exit(0)
 
-                self.printSuccessBanner()
+            ##installer init
+            ## 1) verify that installer is compatible with target OS
+            ## 2) check whether this is a supported OS
+            rpmCheck = rpmcheckcommand.RpmCheckCommand(self._installerInitReceiver)
+            rpmCheck.execute()
+            if not rpmCheck.proceedStatus:
+                message.failure("%s" % rpmCheck.quitMessage)
+                sys.exit(1)
+
+            ##Create Network Receiver
+            self._networkReceiver = networkreceiver.NetworkReceiver(rpmCheck.distroName)
+
+            ##Do discovery of system settings
+            systemSettings = systemsettingscommand.SystemSettingsCommand(self._networkReceiver, self._keyboard_receiver, self._language_receiver, self._timezone_receiver, self._fqdn_receiver, self._diskSpaceCheckReceiver)
+            systemSettings.execute()
+            if not systemSettings.proceedStatus:
+               message.failure("%s" % systemSettings.quitMessage)
+               sys.exit(1)
+
+            ##Check for minimum RAM requirement
+            ##
+            ramCheck = ramcheckcommand.RamCheckCommand(self._ramCheckReceiver)
+            ramCheck.execute()
+            if not ramCheck.proceedStatus:
+               message.warning("%s" % ramCheck.quitMessage)
+              # sys.exit(1)
+
+            ##Check for sufficient diskspace
+            ##
+            diskSpaceCheck = diskspacecheckcommand.DiskSpaceCheckCommand(self._diskSpaceCheckReceiver)
+            diskSpaceCheck.execute()
+            if not diskSpaceCheck.proceedStatus:
+                message.failure("%s" % diskSpaceCheck.quitMessage)
+                sys.exit(1)
+
+            ##Check if we have enough NICs
+            nicCheck = niccheckcommand.NicCheckCommand(self._networkReceiver, systemSettings.configuredNicCount)
+            nicCheck.execute()
+            if not nicCheck.proceedStatus:
+                message.failure("%s" % nicCheck.quitMessage)
+                sys.exit(1)
+
+            ##Check our DHCP config
+            ##
+            dhcpCheck = dhcpcheckcommand.DhcpCheckCommand(self._networkReceiver)
+            dhcpCheck.execute()
+            if not dhcpCheck.proceedStatus:
+                message.failure("%s" % dhcpCheck.quitMessage)
+                sys.exit(1)
+
+            ## Check for timestamp, language, FQDN, Keyboard
+            ##
+            envCheck = envcheckcommand.EnvCheckCommand(nicCheck.provisionInterfaceTuple, nicCheck.publicInterfaceTuple, self._fqdn_receiver)
+            envCheck.execute()
+            if not envCheck.proceedStatus:
+                message.failure("%s" % envCheck.quitMessage)
+                sys.exit(1)
+
+            ## Initialize KusuDB
+            ## The reason for this "late" initialization is due to DB() class + SQLAlchemy's quirkiness
+            ## w.r.t. multiple db connections in the same process
+            import sqlalchemy as sa
+
+            # Clear all mappers and init them
+            for key in sa.orm.mapper_registry.keys():
+                sa.orm.mapper_registry.pop(key)
+
+            self._db = db.DB('sqlite', path('/root/kusu.db'))
+
+            self._rfactory = RepoFactory(self._db)
+
+            self._db.createTables()
+            self._db.bootstrap()
+
+            self._initKusuDBReceiver = initkusudbreceiver.InitKusuDBReceiver(self._db)
+
+            initKusuDB = initkusudbcommand.InitKusuDBCommand(self._initKusuDBReceiver, nicCheck, dhcpCheck, envCheck, systemSettings)
+            initKusuDB.execute()
+            if not initKusuDB.proceedStatus:
+                message.failure("%s" % initKusuDB.quitMessage)
+                sys.exit(1)
+
+            self._createOSRepoReceiver = createosreporeceiver.CreateOSRepoReceiver(self._db)
+            self._installOSKitReceiver = installoskitreceiver.InstallOSKitReceiver(self._db)
+
+            ##Prompt for, and install OS and Base kits
+            ##
+            installOSKit = installoskitcommand.InstallOSKitCommand(self._installOSKitReceiver)
+            installOSKit.execute()
+            if not installOSKit.proceedStatus:
+                message.failure("%s" % installOSKit.quitMessage)
+                sys.exit(1)
+
+            ##Prompt for, and install additional kits
+            installExtraKit = installextrakitcommand.InstallExtraKitCommand(self._installOSKitReceiver)
+            installExtraKit.execute()
+            if not installExtraKit.proceedStatus:
+                message.failure("%s" % installExtraKit.quitMessage)
+                sys.exit(1)
+
+            ## Create the OS repository
+            ##
+            createOSRepo = createosrepocommand.CreateOSRepoCommand(self._createOSRepoReceiver)
+            createOSRepo.execute()
+            if not createOSRepo.proceedStatus:
+                message.failure("%s" % createOSRepo.quitMessage)
+                sys.exit(1)
+
+            #refresh the repo
+            print "Refreshing the repository [%s]. This will take a while..." % createOSRepo.default_repo_name
+            self._repo = self._rfactory.getRepo(createOSRepo.default_repo_id)
+            self._repo.refresh(createOSRepo.default_repo_id)
+
+            #Install Kusu RPMs from our local OS repo
+            rpmInstall = rpminstallcommand.RpmInstallCommand(self._rpmInstallReceiver, createOSRepo.default_repo_id)
+            rpmInstall.execute()
+            if not rpmInstall.proceedStatus:
+                print rpmInstall.quitMessage
+                sys.exit(1)
+
+            ##Run all the kusurc scripts
+            print ("Running kusurc scripts to finalize installation.")
+            self.runKusuRC()
+
+            self._installCompleted = True
+
+            self.printSuccessBanner()
 
         except KeyboardInterrupt:
             #Don't barf of CTL-C
@@ -259,21 +253,39 @@ class KusuSetup:
             print ""
             print("Abort forced. Exiting...")
 
+    def _firewallEnabled(self):
+        p = subprocess.Popen('service iptables status', shell=True,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p.wait()
+        return p.returncode == 0
+
     def printSuccessBanner(self):
+        if self._firewallEnabled():
+            print """
+NOTICE: The default firewall configuration blocks almost
+        all ports. It is necessary to open these ports for
+        the various HPC applications to work.
+        You can manually open these ports or run the following
+        commands to generate new firewall rules:
+
+        # source /opt/kusu/bin/kusuenv.sh
+        # /opt/kusu/bin/kusurc /etc/rc.kusu.d/firstrun/S03KusuIptables.rc.py
+"""
+
         print """
 \n
 All existing repos in /etc/yum.repos.d have been
 disabled. Please re-enable any required repos
 manually.
 \n
-Your Kusu installation is now complete. 
+Your Kusu installation is now complete.
 NOTE: Please reboot your server at this point
       for the final kusu settings to be applied
 """
 
 
 if __name__ == "__main__":
- 
+
     if os.geteuid() != 0:
         message.failure("\nOnly user 'root' can run kusu-setup.")
         message.display("Exiting...")
@@ -288,11 +300,10 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     if options.install:
-        kusuSetup = KusuSetup()        
-        kusuSetup.installKusu() 
+        kusuSetup = KusuSetup()
+        kusuSetup.installKusu()
         sys.exit(0)
     else:
         parser.print_help()
         sys.exit(1)
-
 

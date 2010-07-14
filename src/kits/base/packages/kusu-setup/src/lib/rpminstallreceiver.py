@@ -18,7 +18,9 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import os, tempfile
+import os
+import time
+import tempfile
 from path import path
 from primitive.support import osfamily
 from primitive.support.rpmtool import RPM
@@ -39,6 +41,16 @@ class RpmInstallReceiver:
 
     def __init__(self):
         pass
+
+    def _disableIptablesKusurc(self):
+        kusurc_dir = path('/etc/rc.kusu.d')
+        iptables_kusurc_filename = 'S03KusuIptables.rc.py'
+        iptables_kusurc = kusurc_dir / iptables_kusurc_filename
+        firstrun_dir = kusurc_dir / 'firstrun'
+        if not firstrun_dir.isdir(): firstrun_dir.makedirs()
+        iptables_kusurc.move(firstrun_dir)
+        for f in kusurc_dir.glob(iptables_kusurc_filename + '*'):
+            f.remove()
 
     def installRPMs(self, repoid):
         """
@@ -69,7 +81,11 @@ gpgcheck=0
         #Loop until we have an exit status from YUM
         #Potentially harmful if YUM screws us
         while yumCmd.returncode is None:
+            time.sleep(1)
             continue
+
+        if yumCmd.returncode == 0:
+            self._disableIptablesKusurc()
 
         return yumCmd.returncode == 0 #assume success if returncode == 0
 
