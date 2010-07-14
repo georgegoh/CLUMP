@@ -775,6 +775,6 @@ PKG_KUSU_APPGLOBALS_TOOL_SOURCES = src/sbin src/lib src/man
 # Kusu Setup package.
 KIT_PKGS += PKG_SETUP
 PKG_SETUP_NAME = kusu-setup
-PKG_SETUP_SPEC = kusu-setup.spec
+PKG_SETUP_SPEC = kusu-setup.sles.spec
 PKG_SETUP_SOURCES = ../kusu-nodeinstaller-patchfiles ../kusu-primitive/config.mk ../kusu-primitive/Makefile ../kusu-primitive/src ../kusu-util ../kusu-path ../kusu-buildkit ../kusu-kitops ../kusu-repoman ../kusu-core ../kusu-boot ../kusu-base-node src/bin src/lib doc ../../RPMS/noarch/python-IPy-0.60-1.noarch.rpm ../../RPMS/noarch/python-sqlalchemy-0.3.11-1.noarch.rpm ../../RPMS/x86_64/python-cheetah-2.0-4.1.x86_64.rpm ../../RPMS/x86_64/python-sqlite2-2.4.1-1.2.x86_64.rpm ../../RPMS/x86_64/python-psycopg2-2.0.6-3.1.x86_64.rpm ../kusu-createrepo
 
