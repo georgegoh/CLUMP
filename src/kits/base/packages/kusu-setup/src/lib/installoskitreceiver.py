@@ -94,7 +94,7 @@ class InstallOSKitReceiver(object):
             self.kitops.unmountMedia()
             return False, 'Cannot add OS kit ' + \
                           'because the media does not match the ' + \
-                          'following criteria:\n\t' + '\n\t'.join(err_list)
+                          'following criteria:' + '\n'.join(err_list)
 
         try:
             self._addOSKit(kit_media, cd)
