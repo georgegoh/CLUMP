@@ -262,6 +262,10 @@ class KusuSetup:
     def printSuccessBanner(self):
         print """
 \n
+All existing repos in /etc/yum.repos.d have been
+disabled. Please re-enable any required repos
+manually.
+\n
 Your Kusu installation is now complete. 
 NOTE: Please reboot your server at this point
       for the final kusu settings to be applied
