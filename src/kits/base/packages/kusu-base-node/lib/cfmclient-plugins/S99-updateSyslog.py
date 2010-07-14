@@ -91,7 +91,7 @@ for hostcfgline in hostcfglines:
 ns = {'syslogserver' : logserver}
 
 osname, osver, osarch = OS()
-if osname.lower() in getOSNames('rhelfamily') or osname.lower() == 'fedora' : 
+if osname.lower() in getOSNames('rhelfamily') + ['fedora']:
     cmd = 'rpm -q --qf=%{VERSION} rsyslog'
     p = subprocess.Popen(cmd,
                         shell=True,
@@ -100,7 +100,7 @@ if osname.lower() in getOSNames('rhelfamily') or osname.lower() == 'fedora' :
     out, err = p.communicate()
 
     if p.returncode:
-        log_info("Error: rsyslog is not installed. Exiting") 
+        log_info("Error: rsyslog is not installed. Exiting")
         sys.exit(1)
 
     head_version = out.strip().split('.')[0]
@@ -129,7 +129,7 @@ logconffpw.close()
 # re-generate real configuration file if necessary (currently for SLES)
 if Dispatcher.get('syslog_reconfig_cmd'):
     log_info("Reconfiguring syslog.")
-    os.system("%s >> /va/log/cfmclient.log 2>&1" % Dispatcher.get('syslog_recnfig_cmd'))
+    os.system("%s >> /var/log/kusu/cfmclient.log 2>&1" % Dispatcher.get('syslog_reconfig_cmd'))
 
 # restart syslog service.
 log_info("Restarting syslog service.")
