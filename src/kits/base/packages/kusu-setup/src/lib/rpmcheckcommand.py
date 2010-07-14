@@ -41,9 +41,10 @@ class RpmCheckCommand(Command):
     def execute(self):
         message.display("Checking for OS compatibility")
 
+        distro_major = self._receiver.distroRelease.split('.')[0]
         if (self._receiver.distroName.lower() == KUSU_DISTRO_NAME.lower() or \
                 self.distro_and_system_is_of_rhelfamily()) and \
-                self._receiver.distroRelease == KUSU_DISTRO_VERSION:
+                distro_major == KUSU_DISTRO_VERSION:
             message.success()
             self._proceedStatus = True
             self.distroName = self._receiver.distroName
