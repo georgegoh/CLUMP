@@ -61,7 +61,7 @@ class FQDNReceiver(object):
             fqdn_probed = self._read_hosts()
 
         if not fqdn_probed:
-            message.display("Kusu Setup failed to discover Fully Qualified Domain Name (FQDN) for provision interface.")
+            message.display("\nKusu Setup failed to discover Fully Qualified Domain Name (FQDN) for provision interface.")
             self._prompt_for_fqdn(network_type)
 
         return True

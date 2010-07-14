@@ -37,7 +37,7 @@ class InstallOSKitCommand(Command):
                                       '1)\tCD/DVD drive \n' +
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
-            except:
+            except ValueError:
                 message.display("\nInvalid option is given.")
                 continue
 
@@ -66,7 +66,7 @@ class InstallOSKitCommand(Command):
                                       '1)\tCD/DVD drive \n' +
                                       '2)\tISO image or mount point\n' +
                                       '>> '))
-            except:
+            except ValueError:
                 message.display("\nInvalid option is given.")
                 continue
 

@@ -143,9 +143,9 @@ class InstallOSKitReceiver:
             except Exception, msg:
                 return False, msg
 
-
-
-
+            res = ''
+            while 1:
+                prepare_success = True
                 if res:
                     self.kitops.setKitMedia(res)
                     try:
@@ -169,12 +169,12 @@ class InstallOSKitReceiver:
 
                 answer = 'FAKE_ANSWER'
                 while answer.strip().lower() not in ['no', 'yes', 'y', 'n', '']:
-                    answer = message.input("Any more disks for this OS kit ? (Y/[N]):")
+                    answer = message.input("Any more disks for this OS kit? (Y/[N]):")
 
                 if answer.strip().lower() in ['no','n', '']:
                     break
 
-                if res.lower() in ['y', 'yes']:
+                if answer.lower() in ['y', 'yes']:
                     message.display("\nPlease insert next disk if installing from phys. media NOW")
                     if not prepare_success:
                         message.display("\nCopying from the media you specified was not " + \
