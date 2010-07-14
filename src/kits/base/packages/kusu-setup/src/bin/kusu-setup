@@ -18,7 +18,9 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
-import os, sys
+import os
+import sys
+import time
 import atexit
 
 sys.path.append('/opt/kusu/bootstrap/lib/python')
@@ -98,6 +100,7 @@ class KusuSetup:
         #wait until kusurc completes
         while retval == None:
             retval = proc.poll()
+            time.sleep(1)
 
     def installKusu(self):
    
@@ -235,7 +238,7 @@ class KusuSetup:
                 self._repo = self._rfactory.getRepo(createOSRepo.default_repo_id)
                 self._repo.refresh(createOSRepo.default_repo_id)
 
-                 #Install Kusu RPMs from our local OS repo
+                #Install Kusu RPMs from our local OS repo
                 rpmInstall = rpminstallcommand.RpmInstallCommand(self._rpmInstallReceiver, createOSRepo.default_repo_id)
                 rpmInstall.execute()
                 if not rpmInstall.proceedStatus:
