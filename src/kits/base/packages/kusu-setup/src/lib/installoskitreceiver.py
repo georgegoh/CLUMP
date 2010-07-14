@@ -47,7 +47,7 @@ class InstallOSKitReceiver:
 
         self._db = kusu_db
 
-        self.kitops = KitOps(installer=False)
+        self.kitops = KitOps(installer=True)
         self.kitops.setDB(self._db)
         self.kitops.setPrefix(path('/'))
         self.kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
@@ -58,33 +58,6 @@ class InstallOSKitReceiver:
         self.bootstrap_os_version = ver
         self.bootstrap_os_arch =  arch
         self.bootstrap_os_type = name.lower() #prevents stuff like "CentOS == centos"
-
-
-    def associateComps(self):
-        """
-            After the base and os kits have been installed, we still need to update our
-            component associations
-        """
-
-        ## find the nodegroups
-        ngs = self._db.NodeGroups.select()
-
-        comps = self._db.Components.select()
-
-        for ng in ngs:
-            for comp in comps:
-                #make the associations
-                if comp.ngtypes and comp.ngtypes.find(ng.type) >= 0:
-                    nc = self._db.NGHasComp(ngid=ng.ngid, cid=comp.cid)
-                    nc.save()
-                    nc.flush()
-
-                #handle os component
-                if comp.cname.find(self.bootstrap_os_type) >=0 and ng.type not in ['other']:
-                    nc = self._db.NGHasComp(ngid=ng.ngid, cid=comp.cid)
-                    nc.save()
-                    nc.flush()
-
 
     def updateNodeGroupImages(self, initrd, kernel, longname):
         """
@@ -211,12 +184,7 @@ class InstallOSKitReceiver:
                     if res.lower() == 'n': break
                     elif not res: res = self.determineKitMedia()
 
-
-
-            self.associateComps()
             self.updateNodeGroupImages(kit['initrd'], kit['kernel'], kit['longname'])
-
-
             self.kitops.finalizeOSKit(kit)
             return True, ''
 
@@ -300,7 +268,7 @@ class InstallOSKitReceiver:
         if ostype == self.bootstrap_os_type:
             osTypeMatch = True
         else:
-             err_list.append('Expected OS:%s Provided OS:%s' % (self.bootstrap_os_type.ljust(10),
+            err_list.append('Expected OS:%s Provided OS:%s' % (self.bootstrap_os_type.ljust(10),
                                                    ostype or 'Unknown'))
 
         distro_ver = distro.getVersion() or 'Unknown'
@@ -363,7 +331,7 @@ class InstallOSKitReceiver:
 
         kit_name = kit['name']
         if kit_name in osfamily.getOSNames('rhelfamily') and \
-                self.bootstrap_os_type in  osfamily.getOSNames('rhelfamily'):
+                self.bootstrap_os_type in osfamily.getOSNames('rhelfamily'):
             kit_name = self.bootstrap_os_type
 
         if kit_name != self.bootstrap_os_type or \
@@ -386,14 +354,13 @@ class InstallOSKitReceiver:
         disks_cksum = []
 
         # Compute the checksum of the very first Kit CD
-        message.display('\nStarting checksum... this might take a while...')
+        message.display('\nStarting checksum. This might take a while...')
 
         #Checksum first disk
         cur_disk_cksum  = self.computeChecksum(kitops.mountpoint)
 
         #store checksum
         disks_cksum.append(cur_disk_cksum)
-
 
         message.display('\nCopying OS kit (%s). This might take a while...' % kit['name'])
         kitdir = self.kitops.copyOSKitMedia(kit)
@@ -436,11 +403,8 @@ class InstallOSKitReceiver:
 
                 self.kitops.copyOSKitMedia(kit)
 
-        self.associateComps()
         self.updateNodeGroupImages(kit['initrd'], kit['kernel'], kit['longname'])
-
         self.kitops.finalizeOSKit(kit)
-
 
     def addKitFromCDAction(self, kitops, cdrom):
         """ This method allows for the arbitrary installation of kits from CD media.
