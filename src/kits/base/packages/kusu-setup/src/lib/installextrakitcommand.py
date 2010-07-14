@@ -35,8 +35,8 @@ class InstallExtraKitCommand(Command):
     def _prompt_for_additional_kit(self):
 
         while True:
-            value = message.input('\nDo you want to add any additional kits[Y|N]: ')
-            if value.lower() in ['y', 'yes']:
+            value = message.input('\nDo you want to add/delete kits [1|2|N]: ').strip()
+            if value in ['1']:
                 try:
                     value = int(message.input('\nSelect the kit media to add the kit from: \n'
                                           '1)\tCD/DVD drive \n'
@@ -49,20 +49,31 @@ class InstallExtraKitCommand(Command):
                 if value == 1:
                     #Prompt for and install the additional kits
                     message.input("Insert the CD/DVD media containing your kits. Press ENTER to continue...")
-                    status, msg = self._receiver.install_kits('cdrom')
+                    status, msg = self._receiver.add_kits('cdrom')
                     if not status:
                         message.display(msg)
                 elif value == 2:
-                    status, msg = self._receiver.install_kits('iso')
+                    status, msg = self._receiver.add_kits('iso')
                     if not status:
                         message.display(msg)
                 else:
                     message.display("Invalid option is given.")
                     continue
+            elif value in ['2']:
+                status, msg =  self._receiver.delete_kits()
+                if not status:
+                    message.display(msg)
             elif value.lower() in ['n', 'no']:
                 break
             else:
                 message.display("Wrong Input enter [Y|N]")
                 continue
 
+        kits = []
+        kits = self._receiver.find_incompatible_kits()
+        if kits:
+            message.warning(msg, 0)
+            message.display('\nKusu setup is removing the incompatible kits')
+            self._receiver.delete_kits(kits) 
+  
         self._proceedStatus = True
