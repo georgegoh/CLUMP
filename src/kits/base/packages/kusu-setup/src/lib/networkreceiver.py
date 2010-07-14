@@ -60,6 +60,12 @@ class NetworkReceiver(object):
         return False
 
     def is_static(self, interface, properties, distro):
+
+        try:
+           return (not properties['dhcp'])
+        except KeyError:
+            pass
+
         if distro.lower() in osfamily.getOSNames('rhelfamily') + ['fedora']:
             network_file = RHELFAMILY_NETWORKFILE_PATH + 'ifcfg-%s' % interface
             if path(network_file).exists():
