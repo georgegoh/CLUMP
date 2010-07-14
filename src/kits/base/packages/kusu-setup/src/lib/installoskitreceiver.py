@@ -48,7 +48,7 @@ class InstallOSKitReceiver:
 
         self._db = kusu_db
         self.os_kit = None
-        self.kitops = KitOps(installer=False)
+        self.kitops = KitOps(installer=True)
         self.kitops.setDB(self._db)
         self.kitops.setPrefix(path('/'))
         self.kitops.setTmpPrefix(os.environ.get('KUSU_TMP', ''))
@@ -131,7 +131,7 @@ class InstallOSKitReceiver:
         if ostype == self.bootstrap_os_type:
             osTypeMatch = True
         else:
-             err_list.append('Expected OS:%s Provided OS:%s' % (self.bootstrap_os_type.ljust(10),
+            err_list.append('Expected OS:%s Provided OS:%s' % (self.bootstrap_os_type.ljust(10),
                                                    ostype or 'Unknown'))
 
         distro_ver = distro.getVersion() or 'Unknown'
@@ -226,14 +226,13 @@ class InstallOSKitReceiver:
         disks_cksum = []
 
         # Compute the checksum of the very first Kit CD
-        message.display('\nStarting checksum... this might take a while...')
+        message.display('\nStarting checksum, this might take a while...')
 
         #Checksum first disk
         cur_disk_cksum  = self.computeChecksum(self.kitops.mountpoint)
 
         #store checksum
         disks_cksum.append(cur_disk_cksum)
-
 
         message.display('\nCopying OS kit (%s). This might take a while...' % kit['name'])
         self.os_kit = kit
