@@ -34,12 +34,16 @@ class InstallExtraKitCommand(Command):
 
     def _prompt_for_additional_kits(self):
 
-        input_msg = "\nChoose one of the following:" +\
-               "\n[A]dd kit" +\
-               "\n[D]elete kit" +\
-               "\n[C]ontinue" +\
-               "\n>>"
         while True:
+            kits_delete = False
+            input_msg = "\nChoose one of the following actions:" +\
+                        "\n[A]dd extra kits"
+            if self._receiver.has_kits_to_delete():
+                input_msg += "\n[D]elete extra kit (i.e. not base or OS kit)"
+                kits_delete = True
+            input_msg += "\n[C]ontinue with installation" +\
+                         "\n>>"
+
             value = message.input(input_msg).strip()
             if value.lower() in ['a']:
                 try:
@@ -64,21 +68,25 @@ class InstallExtraKitCommand(Command):
                 else:
                     message.display("Selection is not valid.")
                     continue
-            elif value.lower() in ['d']:
+            elif kits_delete and value.lower() in ['d']:
                 status, msg =  self._receiver.delete_kits()
                 if not status:
                     message.display(msg)
             elif value.lower() in ['c', '']:
                 break
             else:
-                message.display("Input is not valid. Enter either A, D or C.")
+                if kits_delete:
+                    message.display("Input is not valid. Enter either A, D or C.")
+                else:
+                    message.display("Input is not valid. Enter either A or C.")
                 continue
 
         kits = self._receiver.find_incompatible_kits()
         if kits:
             message.warning(msg, 0)
-            message.display('\nKusu Setup is removing the incompatible kits.')
+            message.display('\nRemoving incompatible kits.')
             self._receiver.delete_kits(kits)
+            message.success()
             self._prompt_for_additional_kits()
 
         self._proceedStatus = True

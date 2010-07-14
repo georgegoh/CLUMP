@@ -392,6 +392,9 @@ class InstallOSKitReceiver(object):
 
         return True, msg
 
+    def has_kits_to_delete(self):
+        return (len(self.kitops.listKit()) > 2)
+
     def delete_kits(self, kits=[]):
         # We cannot delete the base and the os kits.
         if not kits:
@@ -481,7 +484,7 @@ class InstallOSKitReceiver(object):
         """
         From a list of kits, select kits to add/delete.
         """
-        if len(kits) <= 1:
+        if policy == 'add' and len(kits) <= 1:
             return kits
 
         selected_kits = []
