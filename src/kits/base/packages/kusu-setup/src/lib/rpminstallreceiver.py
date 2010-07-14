@@ -102,15 +102,16 @@ gpgcheck=0
         service_add_cmd = subprocess.Popen(zypper_service_add, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = service_add_cmd.communicate()
         if service_add_cmd.returncode:
-            message.failure("\n%s" % err)
+            message.failure("\nZypper service add failed: %s" % err)
             return False
 
-        zypper_install_components = "%s install %s" % (ZYPPER_CMD, KUSU_COMPONENTS)
+        zypper_install_components = "%s %s" % (Dispatcher.get('zypper_install_cmd', ''), KUSU_COMPONENTS)
+        print zypper_install_components
         install_cmd = subprocess.Popen(zypper_install_components, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = install_cmd.communicate()
 
         if install_cmd.returncode:
-            message.failure("\n%s" % err)
+            message.failure("\n RPM Installation Failed: %s" % err)
             return False
 
         return True
