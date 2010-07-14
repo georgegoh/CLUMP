@@ -294,7 +294,7 @@ class InstallOSKitReceiver:
 
         if ostype is not None:
             if self.os_kit:
-                return True, 'Cannot add more than one OS kit ' + \
+                return True, '\nCannot add more than one OS kit ' + \
                                'during installation. ' + \
                                '\nYou can add additional OS kit using kusu-kitops later.'
 
@@ -312,7 +312,7 @@ class InstallOSKitReceiver:
 
         base = [kit.rname for kit in self.kitops.listKit() if kit.rname == 'base']
         if base:
-            return True, 'Cannot add more than one base kit' +\
+            return True, '\nCannot add more than one base kit' +\
                           'during installation.' +\
                           '\nYou can add additional base kits using kusu-kitops later.'
         return False, ''
@@ -420,20 +420,21 @@ class InstallOSKitReceiver:
         """ Finds and returns the kits that are not compatible with the OS kit."""
 
         incompatible = []
+        kit_lits = self.kitops.listKit()
+        os = [kit for kit in kit_lits if kit.isOS]
+        if os:
+           self.os_kit = os[0]
         for kit in self.kitops.listKit():
-            components = self.kitops.getKitComponents(kit.kid, self.os_kit.ostype)
-            if not componnents:
+            components = self.kitops.getKitComponents(kit.kid, self.os_kit.os)
+            if not components:
                 incompatible.append(kit)
         return incompatible
 
     def _get_allowed_kits(self):
         kits = []
         for kit in self.kitops.listKit():
-            try:
-                kit.ostype
+            if kit.isOS:
                 continue
-            except AttributeError:
-                 pass
             if kit.rname == 'base':
                 continue
             else:
@@ -484,7 +485,7 @@ class InstallOSKitReceiver:
         """
         From a list of kits select kits to add/delete.
         """
-        if len(kits) == 1:
+        if len(kits) <= 1:
             return kits
 
         selected_kits = []
