@@ -36,21 +36,21 @@ SUPPORTED_ARCH = ['i386', 'x86_64']
 
 class DistroInstallSrcBase(object):
     """Base class for a distro installation source and the operations that can work on it"""
-    
+
     def __init__(self):
         """The following attributes should be defined by the subclasses.
-        
+
         self.srcPath - refers to the path of the installation source. Note that it can be a remote or local path.
         self.isRemote - booleanType and should reflect that self.srcPath is a remote or not.
         self.isAdditionalType - booleanType and should reflect that this media is a additional installation media type.
         self.ostype - Name of the OS/Distro. It should be in lowercase for consistency. May be used for comparison cases.
         self.version - Major version number of the OS/Distro.
-        self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source. 
+        self.pathLayoutAttributes - a dict describing the layout of key directories/files for the installation source.
         self.patchLayoutAttributes - a dict describing the layout of key directories/files for installation patches.
-        
-        The keys should the logical names of each layout attribute and the value should be the relative paths of the 
+
+        The keys should the logical names of each layout attribute and the value should be the relative paths of the
         directories/files."""
-        
+
         self.srcPath = None
         self.isRemote = False
         self.isAdditionalType = False
@@ -62,46 +62,46 @@ class DistroInstallSrcBase(object):
         self.arch = None
         self.pathLayoutAttributes = {}
         self.patchLayoutAttributes = {}
-    
+
     def verifySrcPath(self):
         """Call the correct verify*SrcPath method."""
-        
+
         if self.isRemote:
             return self.verifyRemoteSrcPath()
         else:
             return self.verifyLocalSrcPath()
-    
+
     def verifyLocalSrcPath(self):
         """Verify the path for attributes that describes a valid local installation source"""
-        
+
         try:
-            if not self.srcPath.exists(): 
+            if not self.srcPath.exists():
                 return False
         except AttributeError:
             # we could be testing on a NoneType object instead of a Path object
             return False
-        
+
         # Check the path for each attribute listed
         for k,v in self.pathLayoutAttributes.items():
             p = self.srcPath / v
-            if not p.exists(): 
+            if not p.exists():
                 return False
-        
-        return True  
+
+        return True
 
     def verifyRemoteSrcPath(self):
         """Verify the path for attributes that describes a valid remote installation source"""
 
         pass
-        
+
     def getKernelPath(self):
         """Get the kernel path object"""
-        
+
         if self.pathLayoutAttributes.has_key('kernel'):
             return path(self.srcPath / self.pathLayoutAttributes['kernel'])
         else:
             return None
-            
+
     def getInitrdPath(self):
         """Get the initrd path object"""
 
@@ -109,10 +109,10 @@ class DistroInstallSrcBase(object):
             return path(self.srcPath / self.pathLayoutAttributes['initrd'])
         else:
             return None
-            
+
     def copyKernel(self, dest, overwrite=False):
         """Copy the kernel file to a destination"""
-        
+
         try:
             if path(dest).isdir():
                 if path(dest).access(os.W_OK):
@@ -148,7 +148,7 @@ class DistroInstallSrcBase(object):
                     raise CopyError, errmsg
         except IOError, e:
             raise e
-    
+
     def copyInitrd(self, dest, overwrite=False):
         """Copy the initrd file to a destination"""
 
@@ -158,21 +158,21 @@ class DistroInstallSrcBase(object):
                     # check if the destpath already contains the same name as the initrdPath
                     filepath = path(dest) / self.getInitrdPath().basename()
                     if filepath.exists() and overwrite:
-                        filepath.chmod(0644)            
+                        filepath.chmod(0644)
                         self.getInitrdPath().copy(filepath)
                         return
                     elif not filepath.exists():
                         self.getInitrdPath().copy(filepath)
                         return
                     else:
-                        raise FileAlreadyExists                
+                        raise FileAlreadyExists
                 else:
                     errmsg = "Write permission denied: %s" % path(dest)
                     raise CopyError, errmsg
             else:
                 if path(dest).parent.access(os.W_OK):
                     # make sure that the existing destpath is accessible and writable
-                    if path(dest).exists() and overwrite: 
+                    if path(dest).exists() and overwrite:
                         # remove the existing file if overwrite is true
                         path(dest).remove()
                         self.getInitrdPath().copy(dest)
@@ -206,7 +206,7 @@ class DistroInstallSrcBase(object):
 
     def getArch(self):
         return self.arch
-        
+
     def getKernelPackages(self):
         """ Returns any distribution-specific kernel packages. """
         raise NotImplementedError
@@ -214,7 +214,7 @@ class DistroInstallSrcBase(object):
 
 def DistroFactory(srcPath):
     """ Factory function that returns a DistroInstallSrcBase instance. """
-    distros = [CentOS5InstallSrc(srcPath), 
+    distros = [CentOS5InstallSrc(srcPath),
                CentOS5AdditionalInstallSrc(srcPath),
                CentOS4InstallSrc(srcPath),
                CentOS4AdditionalInstallSrc(srcPath),
@@ -239,7 +239,7 @@ def DistroFactory(srcPath):
 
 class CentOS4InstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
-    
+
     def __init__(self, srcPath):
         super(CentOS4InstallSrc,self).__init__()
         if srcPath.startswith('http://'):
@@ -251,7 +251,7 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
         else:
             self.srcPath = path(srcPath)
             self.isRemote = False
-            
+
         self.ostype = 'centos'
         self.version = '4'
 
@@ -278,14 +278,14 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
     def getVersion(self):
         '''CentOS specific way of getting the distro version'''
         return self.version
-        
+
     def getIsolinuxbinPath(self):
         """Get the isolinux.bin path object"""
 
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -295,19 +295,19 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -325,7 +325,7 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
             return path(self.srcPath / self.pathLayoutAttributes['stage2'])
         else:
             return None
-            
+
     def copyStage2(self, dest, overwrite=False):
         """Copy the stage2 file to a destination"""
 
@@ -334,19 +334,19 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the stage2Path
                 filepath = path(dest) / self.getStage2Path().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getStage2Path().copy(filepath)
                 elif not filepath.exists():
                     self.getStage2Path().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getStage2Path().copy(dest)
                 if not path(dest).exists():
@@ -356,7 +356,7 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
             else:
                 errmsg = 'Write permission denied: %s' % path(dest).parent
                 raise CopyError, errmsg
-                
+
     def getKernelPackages(self):
         # set up pattern to match centos kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -380,7 +380,7 @@ class CentOS4InstallSrc(DistroInstallSrcBase):
 
 class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
     """This class describes how a CentOS installation source should be and the operations that can work on it."""
-    
+
     def __init__(self, srcPath):
         super(CentOS4AdditionalInstallSrc,self).__init__()
         if srcPath.startswith('http://'):
@@ -392,7 +392,7 @@ class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
         else:
             self.srcPath = path(srcPath)
             self.isRemote = False
-            
+
         self.ostype = 'centos'
         self.version = '4'
         self.isAdditionalType = True
@@ -405,16 +405,16 @@ class CentOS4AdditionalInstallSrc(DistroInstallSrcBase):
 
     def getKernelPath(self):
         return None
-            
+
     def getInitrdPath(self):
         return None
-            
+
     def copyKernel(self, dest, overwrite=False):
         raise CopyError, dest
-        
+
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError, dest
-        
+
     def getKernelPackages(self):
         # set up pattern to match centos kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -481,7 +481,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -491,19 +491,19 @@ class FedoraInstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -588,7 +588,7 @@ class FedoraInstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match fedora kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -638,13 +638,13 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
 
     def getKernelPath(self):
         return None
-            
+
     def getInitrdPath(self):
         return None
-            
+
     def copyKernel(self, dest, overwrite=False):
         raise CopyError, dest
-        
+
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError, dest
 
@@ -682,7 +682,7 @@ class FedoraAdditionalInstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
-        
+
 
     def getKernelPackages(self):
         # set up pattern to match fedora kernel packages
@@ -749,7 +749,7 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -759,19 +759,19 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -856,7 +856,7 @@ class Fedora7InstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match fedora kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -915,7 +915,7 @@ class RHELInstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -925,19 +925,19 @@ class RHELInstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -951,7 +951,7 @@ class RHELInstallSrc(DistroInstallSrcBase):
     def getVersion(self):
         '''RHEL specific way of getting the distro version'''
         return self.version     #for now
-        
+
     def getKernelPackages(self):
         # set up pattern to match rhel kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -1022,17 +1022,17 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
 
         r = RPM(str(self.getReleasePkg()))
         self.minorVersion = r.getVersion().split('.')[1]
- 
+
         return self.minorVersion
 
     def getVersionString(self):
         '''CentOS specific way of getting the distro version'''
-         
+
         r = RPM(str(self.getReleasePkg()))
         self.versionString = '.'.join(r.getVersion().split('.')[:2])
 
         return self.versionString
- 
+
     def getVersion(self):
         '''CentOS specific way of getting the distro version'''
         return self.version
@@ -1043,7 +1043,7 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -1053,19 +1053,19 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -1092,19 +1092,19 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the stage2Path
                 filepath = path(dest) / self.getStage2Path().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getStage2Path().copy(filepath)
                 elif not filepath.exists():
                     self.getStage2Path().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getStage2Path().copy(dest)
                 if not path(dest).exists():
@@ -1129,7 +1129,7 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match rhel kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -1179,7 +1179,7 @@ class CentOS5InstallSrc(DistroInstallSrcBase):
         except OSError:
             pass
 
- 
+
     # syntactic sugar
     getKernelRpms = getKernelPackages
 
@@ -1212,13 +1212,13 @@ class CentOS5AdditionalInstallSrc(DistroInstallSrcBase):
 
     def getKernelPath(self):
         return None
-            
+
     def getInitrdPath(self):
         return None
-            
+
     def copyKernel(self, dest, overwrite=False):
         raise CopyError, dest
-        
+
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError, dest
 
@@ -1315,7 +1315,7 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -1325,19 +1325,19 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -1364,19 +1364,19 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the stage2Path
                 filepath = path(dest) / self.getStage2Path().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getStage2Path().copy(filepath)
                 elif not filepath.exists():
                     self.getStage2Path().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getStage2Path().copy(dest)
                 if not path(dest).exists():
@@ -1398,17 +1398,17 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
 
         r = RPM(str(self.getReleasePkg()))
         self.minorVersion = r.getRelease().split('.')[1]
- 
+
         return self.minorVersion
 
     def getVersionString(self):
         '''Redhat specific way of getting the distro version'''
-         
+
         r = RPM(str(self.getReleasePkg()))
         self.versionString = '.'.join(r.getRelease().split('.')[:2])
 
         return self.versionString
- 
+
     def getVersion(self):
         '''Redhat specific way of getting the distro version'''
         discinfo = self.srcPath + '/.discinfo'
@@ -1447,7 +1447,7 @@ class RHEL5InstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match rhel kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -1531,13 +1531,13 @@ class RHEL5AdditionalInstallSrc(DistroInstallSrcBase):
 
     def getKernelPath(self):
         return None
-            
+
     def getInitrdPath(self):
         return None
-            
+
     def copyKernel(self, dest, overwrite=False):
         raise CopyError, dest
-        
+
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError, dest
 
@@ -1647,7 +1647,7 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -1657,19 +1657,19 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -1696,19 +1696,19 @@ class Fedora8InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the stage2Path
                 filepath = path(dest) / self.getStage2Path().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getStage2Path().copy(filepath)
                 elif not filepath.exists():
                     self.getStage2Path().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getStage2Path().copy(dest)
                 if not path(dest).exists():
@@ -1814,7 +1814,7 @@ class SLES10InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -1824,19 +1824,19 @@ class SLES10InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -1872,10 +1872,10 @@ class SLES10InstallSrc(DistroInstallSrcBase):
 
         groups = re.compile('\d+').findall(version)
         if len(groups) >= 2:
-            self.minorVersion = groups[1] 
+            self.minorVersion = groups[1]
         else:
-            self.minorVersion = '0' #10.0 
-            
+            self.minorVersion = '0' #10.0
+
         return self.minorVersion
 
     def getVersionString(self):
@@ -1893,7 +1893,7 @@ class SLES10InstallSrc(DistroInstallSrcBase):
             self.versionString = '10.0'
 
         return self.versionString
- 
+
     def getVersion(self):
         '''SLES specific way of getting the distro version'''
 
@@ -1913,9 +1913,9 @@ class SLES10InstallSrc(DistroInstallSrcBase):
             self.arch = 'i386'
         elif (self.srcPath / 'boot' / 'x86_64').exists():
             self.arch = 'x86_64'
-        
+
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match sles kernel packages
         pat = re.compile(r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -1940,7 +1940,7 @@ class SLES10InstallSrc(DistroInstallSrcBase):
         except OSError:
             pass
 
-                
+
         return kpkgs
 
     # syntactic sugar
@@ -1989,7 +1989,7 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -1999,19 +1999,19 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 errmsg = 'Write permission denied: %s' % path(dest)
                 raise CopyError, errmsg
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -2045,7 +2045,7 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
         # VERSION 10.3
         version = lines[1] # 2nd line
         self.minorVersion = re.compile('\d+').findall(version)[1]
-            
+
         return self.minorVersion
 
     def getVersionString(self):
@@ -2059,7 +2059,7 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
         self.versionString = '.'.join(re.compile('\d+').findall(version)[:2])
 
         return self.versionString
- 
+
     def getVersion(self):
         '''SLES specific way of getting the distro version'''
 
@@ -2079,9 +2079,9 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
             self.arch = 'i386'
         elif (self.srcPath / 'boot' / 'x86_64').exists():
             self.arch = 'x86_64'
-        
+
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match sles kernel packages
         pat = re.compile(r'kernel-default-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -2106,7 +2106,7 @@ class OPENSUSE103InstallSrc(DistroInstallSrcBase):
         except OSError:
             pass
 
-                
+
         return kpkgs
 
     # syntactic sugar
@@ -2162,7 +2162,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
         if self.pathLayoutAttributes.has_key('isolinuxbin'):
             return path(self.srcPath / self.pathLayoutAttributes['isolinuxbin'])
         else:
-            return None 
+            return None
 
     def copyIsolinuxbin(self, dest, overwrite=False):
         """Copy the isolinuxbin file to a destination"""
@@ -2172,18 +2172,18 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
                 # check if the destpath already contains the same name as the isolinuxbinPath
                 filepath = path(dest) / self.getIsolinuxbinPath().basename()
                 if filepath.exists() and overwrite:
-                    filepath.chmod(0644)            
+                    filepath.chmod(0644)
                     self.getIsolinuxbinPath().copy(filepath)
                 elif not filepath.exists():
                     self.getIsolinuxbinPath().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 raise CopyError, "Cannot write to %s. Check path and permissions." % dest
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getIsolinuxbinPath().copy(dest)
                 if not path(dest).exists():
@@ -2214,13 +2214,13 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
                 elif not filepath.exists():
                     self.getStage2Path().copy(filepath)
                 else:
-                    raise FileAlreadyExists                
+                    raise FileAlreadyExists
             else:
                 raise CopyError, "Cannot write to %s. Check path and permissions." % dest
         else:
             if path(dest).parent.access(os.W_OK):
                 # make sure that the existing destpath is accessible and writable
-                if path(dest).exists() and overwrite: 
+                if path(dest).exists() and overwrite:
                     path(dest).chmod(0644)
                     self.getStage2Path().copy(dest)
                 if not path(dest).exists():
@@ -2244,7 +2244,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
         return self.arch
-        
+
     def getKernelPackages(self):
         # set up pattern to match rhel kernel packages
         pat = re.compile(r'kernel-[\d]+?.[\d]+?[\d]*?.[\d.+]+?')
@@ -2270,7 +2270,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
             pass
 
         return kpkgs
-    
+
     def getMajorVersion(self):
         self.majorVersion = self.getVersion()
         return self.majorVersion
@@ -2278,7 +2278,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
     def getMinorVersion(self):
         r = RPM(str(self.getReleasePkg()))
         self.minorVersion = r.getVersion().split('.')[1]
- 
+
         return self.minorVersion
 
     def getVersionString(self):
@@ -2286,7 +2286,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
         self.versionString = '.'.join(r.getVersion().split('.')[:2])
 
         return self.versionString
- 
+
     def getVersion(self):
         '''Scientific Linux specific way of getting the distro version'''
         return self.version
@@ -2314,7 +2314,7 @@ class ScientificLinux5InstallSrc(DistroInstallSrcBase):
         except OSError:
             pass
 
- 
+
 
     # syntactic sugar
     getKernelRpms = getKernelPackages
@@ -2349,13 +2349,13 @@ class ScientificLinux5AdditionalInstallSrc(DistroInstallSrcBase):
 
     def getKernelPath(self):
         return None
-            
+
     def getInitrdPath(self):
         return None
-            
+
     def copyKernel(self, dest, overwrite=False):
         raise CopyError, "Cannot write to %s. Check path and permissions." % dest
-        
+
     def copyInitrd(self, dest, overwrite=False):
         raise CopyError, "Cannot write to %s. Check path and permissions." % dest
 
@@ -2417,7 +2417,7 @@ class ScientificLinux5AdditionalInstallSrc(DistroInstallSrcBase):
         else:
             #rpm -qp fedora-release-[0-9]*.rpm --queryformat='%{arch}' 2> /dev/null
             pass
-        
+
         if self.version ==version:
             return True
         else:
@@ -2579,7 +2579,7 @@ class ScientificLinuxCern5InstallSrc(DistroInstallSrcBase):
         except OSError:
             pass
         return kpkgs
-   
+
     def getMajorVersion(self):
         self.majorVersion = self.getVersion()
         return self.majorVersion
@@ -2618,8 +2618,11 @@ class ScientificLinuxCern5InstallSrc(DistroInstallSrcBase):
             for pkgdir in pkgsdir:
                 root = path(self.srcPath) / pkgdir
 
-                kpkgs =  [f for f in root.walkfiles('sl-release-notes*rpm')]
-                if kpkgs: return kpkgs[0]
+                kpkgs = [f for f in root.walkfiles('sl-release-notes*rpm')]
+                if kpkgs:
+                    # there may be multiple release notes RPMs but we want the latest
+                    kpkgs.sort(reverse=True)
+                    return kpkgs[0]
         except OSError:
             pass
 
