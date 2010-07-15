@@ -32,6 +32,7 @@ from primitive.support import osfamily
 from primitive.system.hardware import probe
 import kusu.ipfun as ipfun
 from primitive.support.util import runCommand
+from primitive.system.software.dispatcher import Dispatcher
 
 RHELFAMILY_NETWORKFILE_PATH = '/etc/sysconfig/network-scripts/'
 SLESFAMILY_NETWORKFILE_PATH = '/etc/sysconfig/network/'
@@ -98,7 +99,7 @@ class NetworkReceiver(object):
         """
             Testing whether the package is installed is sufficient.
         """
-        return self.hasRPM('dhcp')
+        return self.hasRPM(Dispatcher.get('dhcp_server_package', 'dhcp'))
 
     def is_dns_installed(self):
         return self.hasRPM('bind')

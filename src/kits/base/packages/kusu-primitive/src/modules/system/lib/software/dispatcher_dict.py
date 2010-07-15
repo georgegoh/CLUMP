@@ -5,7 +5,7 @@
 #
 # Copyright 2010 Platform Computing Inc.
 #
-# The dispatcher dict is a python dictionary which catalogs several programs 
+# The dispatcher dict is a python dictionary which catalogs several programs
 # that are used for the same purpose in various distros. This layer of abstraction
 # is not limited to commands and can be used for any purpose such as common directories
 # or files which Kusu may depend on.
@@ -110,7 +110,7 @@ dispatcher_dict = {
     'service_runningp' : { ('SLES','10','i386') : 'service %s status',
                            ('SLES','10','x86_64') : 'service %s status',
                            ('RHEL','5','i386') : 'service %s status',
-                           ('RHEL','5','x86_64') : 'service %s status', 
+                           ('RHEL','5','x86_64') : 'service %s status',
                          },
     'service_enabledp' : { ('SLES','10','i386') : 'service %s status',
                            ('SLES','10','x86_64') : 'service %s status',
@@ -146,7 +146,7 @@ dispatcher_dict = {
                            ('SLES','10','x86_64') : '/srv/www/htdocs',
                            ('RHEL','5','i386') : '/var/www/html',
                            ('RHEL','5','x86_64') : '/var/www/html',
-                         }, 
+                         },
     'webserver_confdir': { ('SLES','10','i386') : '/etc/apache2/conf.d',
                            ('SLES','10','x86_64') : '/etc/apache2/conf.d',
                            ('RHEL','5','i386') : '/etc/httpd/conf.d',
@@ -161,7 +161,7 @@ dispatcher_dict = {
                              ('SLES','10','x86_64') : '/etc/sysconfig/network',
                              ('RHEL','5','i386') : '/etc/sysconfig/network-scripts',
                              ('RHEL','5','x86_64') : '/etc/sysconfig/network-scripts',
-                           }, 
+                           },
     'ifup_path': { ('SLES','10','i386') : '/sbin',
                    ('SLES','10','x86_64') : '/sbin',
                    ('RHEL','5','i386') : '/sbin',
@@ -432,6 +432,11 @@ dispatcher_dict = {
                               ('RHEL','5','i386') : 'DHCPDARGS',
                               ('RHEL','5','x86_64') : 'DHCPDARGS'
                             },
+    'dhcp_server_package' : { ('SLES','10','i386') : 'dhcp-server',
+                              ('SLES','10','x86_64') : 'dhcp-server',
+                              ('RHEL','5','i386') : 'dhcp',
+                              ('RHEL','5','x86_64') : 'dhcp'
+                            },
     'firewall_config_file' : { ('SLES','10','i386') : '/etc/sysconfig/SuSEfirewall2',
                                ('SLES','10','x86_64') : '/etc/sysconfig/SuSEfirewall2',
                                ('RHEL','5','i386') : '/etc/sysconfig/iptables',
@@ -456,5 +461,5 @@ if __name__ == '__main__':
                  if 1 == str(os_command_map[os_tuple]).count('%s') :
                      print os_command_map[os_tuple] % 'test'
                  else:
-                     print os_command_map[os_tuple] 
+                     print os_command_map[os_tuple]
 
