@@ -32,7 +32,7 @@ class DiskSpaceCheckCommand(Command):
 
     def show_partition_list(self, partitions):
         message.display("\nSelect one of the following mountpoints where "
-                        "Kusu should place its '/depot' folder:")
+                        "Kusu should place its '/depot':")
         count = 1
         for (mountpoint, size) in partitions:
             message.display("\n\t %d) MountPoint: '%s' FreeSpace: '%sB' " \
@@ -43,8 +43,8 @@ class DiskSpaceCheckCommand(Command):
         partitions = self._receiver.freeDiskSpace
 
         if len(partitions) == 1 and partitions[0][0] == '/depot':
-            message.display("\nKusu Setup has found valid '/depot' "
-                            "mountpoint to place its '/depot' folder.")
+            message.display("\nKusu Setup has found valid mountpoint "
+                            "to place its '/depot'.")
             self._proceedStatus = True
             self.depot_partition = partitions[0]
             return

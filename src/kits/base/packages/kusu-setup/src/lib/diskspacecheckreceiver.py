@@ -31,7 +31,6 @@ from path import path
 
 DF_COMMAND = 'df -lh '
 MOUNT_COMMAND = 'mountpoint '
-MINIMUM_DISK_SPACE_REQ = 10240
 
 def convert_to_megabytes(number, pattern=''):
     value = None
@@ -59,6 +58,8 @@ def convert_to_megabytes(number, pattern=''):
     return value
 
 class DiskSpaceCheckReceiver(object):
+
+    MINIMUM_DISK_SPACE_REQ = 10240
 
     def __init__(self):
         self._depot_present = False
@@ -113,7 +114,7 @@ class DiskSpaceCheckReceiver(object):
                 values = line.split()
                 if len(values) > 1:
                     free_space = convert_to_megabytes(values[2])
-                    if free_space > MINIMUM_DISK_SPACE_REQ:
+                    if free_space > self.MINIMUM_DISK_SPACE_REQ:
                         partition_dir[values[4]] = values[2]
                     is_physical_part = False
 
@@ -122,7 +123,7 @@ class DiskSpaceCheckReceiver(object):
                 values = line.split()
                 if len(values) > 1:
                     free_space = convert_to_megabytes(values[3])
-                    if free_space > MINIMUM_DISK_SPACE_REQ:
+                    if free_space > self.MINIMUM_DISK_SPACE_REQ:
                         partition_dir[values[5]] = values[3]
                     is_physical_part = False
 

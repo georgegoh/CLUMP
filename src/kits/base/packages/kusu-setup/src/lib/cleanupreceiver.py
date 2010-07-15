@@ -104,11 +104,11 @@ class CleanupReceiver(object):
         dirtyFlag = False
 
         #Check for presence of /depot
-        message.display("Checking for presence of '/depot' folder")
+        message.display("Checking for presence of '/depot'")
         if os.path.exists("/depot"):
             dirtyFlag = True
             self._need_to_remove_depot = True
-            message.warning("\n/depot folder found")
+            message.warning("\n'/depot' found")
         else:
             message.success()
 
@@ -169,9 +169,9 @@ class CleanupReceiver(object):
                 except Exception , msg:
                     message.failure("Not able to drop kusudb. %s" % msg)
 
-            #remove /depot folder
+            #remove /depot
             if self._need_to_remove_depot:
-                message.display("\nRemoving '/depot' folder....")
+                message.display("\nRemoving '/depot'...")
                 import shutil
                 try:
                     if os.path.islink('/depot'):
@@ -195,5 +195,5 @@ class CleanupReceiver(object):
                         message.success()
 
                 except Exception, msg:
-                    message.failure("\nNot able to remove /depot folder. %s" % msg)
+                    message.failure("\nNot able to remove '/depot'. %s" % msg)
 

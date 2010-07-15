@@ -21,7 +21,6 @@
 from command import Command
 import message
 import kusu.ipfun as ipfun
-from diskspacecheckreceiver import MINIMUM_DISK_SPACE_REQ
 from setup_errors import KusuProbePluginError
 
 class SystemSettingsCommand(Command):
@@ -38,20 +37,32 @@ class SystemSettingsCommand(Command):
         self._fqdn_receiver = fqdn_receiver
         self._diskspace_receiver = diskspace_receiver
 
-    def execute(self):
+    def _check_valid_mountpoint(self):
+        message.display("Checking for valid mountpoint for '/depot'")
+        if not self._diskspace_receiver.freeDiskSpace:
+            self._quitMessage = ("\nNo valid mountpoint found for '/depot'."
+                                 "\nEnsure that there is at least one partition with a"
+                                 "\nminimum of %sGB disk space available.") \
+                                 % (self._diskspace_receiver.MINIMUM_DISK_SPACE_REQ/1024)
+            return False
 
-        # Handle existing '/depot' mountpoint
-        message.display("Checking for existing '/depot' mountpoint")
         if self._diskspace_receiver.is_depot_mountpoint():
             if self._diskspace_receiver.is_depot_valid_installdir():
                 message.success()
             else:
-                message.failure("Found existing '/depot' mountpoint with insufficient diskspace.\nMake sure that the '/depot' partition has at least %dGB of free diskspace." % (MINIMUM_DISK_SPACE_REQ/1024))
-                self._quitMessage = "\nBye!"
-                self._proceedStatus = False
-                return
-        else:
-            message.success()
+                self._quitMessage = ("\nFound existing '/depot' mountpoint with insufficient diskspace."
+                                     "\nMake sure that '/depot' has at least %dGB of free diskspace.") \
+                                     % (self._diskspace_receiver.MINIMUM_DISK_SPACE_REQ/1024)
+                return False
+
+        message.success()
+        return True
+
+    def execute(self):
+
+        if not self._check_valid_mountpoint():
+            self._proceedStatus = False
+            return
 
         interfaces, properties = self._networkReceiver.physicalInterfacesAndProperties
 
@@ -78,8 +89,8 @@ class SystemSettingsCommand(Command):
 
         message.display("Checking for the public hostname")
         if not self._fqdn_receiver.pub_dns_discover():
-            message.failure("Not able to discover the public hostname.\nDo configure a valid public FQDN for your machine.")
-            self._quitMessage = "\nBye!"
+            self._quitMessage = ("\nNot able to discover the public hostname."
+                                 "\nDo configure a valid public FQDN for your machine.")
             self._proceedStatus = False
             return
         else:
