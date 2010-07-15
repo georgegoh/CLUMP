@@ -29,8 +29,6 @@ from path import path
 from kusu.util.verify import verifyFQDN
 import message
 
-HOSTS = '/etc/hosts'
-
 class FQDNReceiver(object):
 
     def __init__(self):
@@ -40,7 +38,7 @@ class FQDNReceiver(object):
 
     def pub_dns_discover(self):
         self.pub_domain = socket.gethostname()
-        return verifyFQDN(self.pub_domain)
+        return verifyFQDN(self.pub_domain)[0]
 
     def get_fqdn(self):
         """ Interface to expose the provision and public domains. """

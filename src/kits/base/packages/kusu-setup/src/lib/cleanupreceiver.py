@@ -182,7 +182,7 @@ class CleanupReceiver(object):
 
                     elif os.path.ismount('/depot'):
                         #remove all kusu subfolders, leaving /depot intact
-                        message.display('\n/depot is a mountpoint. Only removing kusu subfolders.')
+                        message.display("\n'/depot' is a mountpoint. Only removing kusu subfolders.")
 
                         for subdir in ['contrib', 'kits', 'repos', 'www']:
                             if os.path.exists('/depot/%s' % subdir):
