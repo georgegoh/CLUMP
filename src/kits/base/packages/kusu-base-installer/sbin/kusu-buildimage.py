@@ -99,10 +99,10 @@ class BuildImageApp(KusuApp):
             try:
                 imgfun.makeImage(self.options.nodegrp, image)
             except BuildImageException, e:
-                self.stderrMessage(e)
+                self.stderrMessage("%s" % e)
                 sys.exit(0)
             except (BuildImageError, YumFailedToRunError), e:
-                self.stderrMessage('Error: ' + e)
+                self.stderrMessage('Error: %s' % e)
                 sys.exit(-1)
         else:
             # Missing node group name
