@@ -38,12 +38,14 @@ class LanguageReceiver(object):
     def probe_locale(self):
         message.display("Probing for the language/locale settings")
         command = LOCALE_CMD + '|' + GREP_COMMAND +  '^LANG'
-        run_cmd = subprocess.Popen(command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        run_cmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                stderr = subprocess.PIPE)
         out, err = run_cmd.communicate()
-        if out:
+        if out and not out.strip() == 'LANG=':
+            # e.g. LANG=en_US.UTF-8
             self._language = out.split('=')[1].split('.')[0]
         else:
-            raise KusuProbePluginError, "Not able to figure out the system language."
+            raise KusuProbePluginError, "Not able to figure out the system language/locale."
 
         message.success()
         return True

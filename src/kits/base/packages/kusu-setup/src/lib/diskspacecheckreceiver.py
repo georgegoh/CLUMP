@@ -99,7 +99,7 @@ class DiskSpaceCheckReceiver(object):
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         if p.returncode:
-            raise KusuProbePluginError, 'Partition probe failed'
+            raise KusuProbePluginError, 'Not able to probe disk partitions.'
 
         if out:
             self._partition_dir = self._process_df_output(out)

@@ -125,7 +125,7 @@ class SystemSettingsCommand(Command):
 
         except KusuProbePluginError, msg:
             self._proceedStatus = False
-            self._quitMessage = "Not able to detect system settings [%s]. Quitting." % msg
+            self._quitMessage = "\n%s" % msg
             return
 
         message.display("Probing for DNS settings")
