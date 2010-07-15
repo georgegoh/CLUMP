@@ -211,7 +211,7 @@ Example operations:
         try:
             handler(self.actionargs)
         except InvalidArguments, e:
-            self.stderrMessage(e)
+            self.stderrMessage(str(e))
             self.printUsageExit()
         except DriverPatchActionError, e:
             self.printMsgExit(e)
