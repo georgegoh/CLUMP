@@ -39,7 +39,7 @@ class LanguageReceiver(object):
         message.display("Probing for the language/locale settings")
         command = LOCALE_CMD + '|' + GREP_COMMAND +  '^LANG'
         run_cmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                stderr = subprocess.PIPE)
+                stderr=subprocess.PIPE)
         out, err = run_cmd.communicate()
         if out and not out.strip() == 'LANG=':
             # e.g. LANG=en_US.UTF-8

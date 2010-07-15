@@ -131,7 +131,7 @@ class SystemSettingsCommand(Command):
         message.display("Probing for DNS settings")
         resolvList = self._networkReceiver.nameservers
         if len(resolvList) == 0:
-            message.warning("No 'nameserver' entries were found in /etc/resolv.conf")
+            message.warning("No valid 'nameserver' entries were found in /etc/resolv.conf")
             nameservers = ""
             while nameservers == "":
                 nameservers = message.input("\nEnter the IP addresses of your nameservers separated by commas: ")

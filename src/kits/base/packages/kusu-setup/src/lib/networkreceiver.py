@@ -121,7 +121,7 @@ class NetworkReceiver(object):
         if os.path.exists('/etc/resolv.conf'):
             file = open('/etc/resolv.conf')
             for line in file.readlines():
-                if line.find('nameserver') >= 0:
+                if line.startswith('nameserver '):
                     lst = line.split()
                     if len(lst) >= 2 and ipfun.validIP(lst[1]):    #add ip validation
                         nslist.append(lst[1])

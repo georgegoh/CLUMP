@@ -38,7 +38,8 @@ class RamCheckReceiver(object):
             Returns the amount of RAM in the system.
         """
         grep_command = GREP_COMMAND + '^MemTotal\s*:' + ' %s' % PROC_MEMINFO
-        run_cmd = subprocess.Popen(grep_command, shell=True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        run_cmd = subprocess.Popen(grep_command, shell=True, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
         out, err = run_cmd.communicate()
         host_memsize = 0
         if out:

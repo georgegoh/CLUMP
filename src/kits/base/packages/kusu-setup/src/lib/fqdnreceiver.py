@@ -49,7 +49,7 @@ class FQDNReceiver(object):
         st = False
         while not st:
             self.prov_domain = message.input("\nSpecify private cluster domain "
-                                             "(example private.dns.zone):")
+                                             "(e.g. private.dns.zone):")
 
             st, msg = verifyFQDN(self.prov_domain)
             if msg:
