@@ -341,6 +341,7 @@ class InstallOSKitReceiver(object):
         """Install the other kits from cd."""
 
         kits = []
+        msg = "Could not find base kit in the media."
         if kit_media == 'cdrom':
             import primitive.system.hardware.probe
             cdrom_dict = primitive.system.hardware.probe.getCDROM()
@@ -352,10 +353,11 @@ class InstallOSKitReceiver(object):
                     kits = self.kitops.addKitPrepare()
                 except Exception:
                     continue
-                if base == 'base':
-                    if not self._has_base_kit(kits):
-                        continue
                 if kits:
+                    if base == 'base':
+                        if not self._has_base_kit(kits):
+                           kits=[]
+                           continue
                     return kits, cd
         elif kit_media == 'iso':
             kit_iso = self.prompt_for_kit()
@@ -372,7 +374,7 @@ class InstallOSKitReceiver(object):
                 msg = "\nProvide a valid iso file: %s" % e
                 return [], msg
 
-        return kits, ''
+        return kits, msg
 
     def add_kits(self, kit_media):
         kits = []
@@ -380,6 +382,12 @@ class InstallOSKitReceiver(object):
             kits, cd = self.get_kits_from_media(kit_media)
         except Exception, msg:
             return False, "\nNot able to mount kit media: %s" % msg
+
+        try:
+            kits.ostype
+            return False, "\nProvided kit is an OS kit. Provide a valid kit media."
+        except AttributeError:
+            pass
 
         status = False
         msg = 'Provided media is not valid.'
@@ -467,6 +475,13 @@ class InstallOSKitReceiver(object):
 
     def _has_base_kit(self, kits):
         base_kit = False
+
+        try: # Check for os kit
+            kits.ostype
+            return False
+        except AttributeError:
+            pass
+
         for kit in kits:
             if kit[1]['name'] == 'base':
                 rpmtool =  kit[-2]
