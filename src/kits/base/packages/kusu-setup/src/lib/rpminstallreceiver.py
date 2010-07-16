@@ -38,18 +38,19 @@ except:
 
 ZYPPER_CMD = '/usr/bin/zypper --non-interactive --no-gpg-checks'
 ZYPPER_SERVICE_ADD_OPTIONS = 'service-add -t YaST'
+ZYPPER_SERVICE_ALIAS = 'KusuRepo'
 KUSU_COMPONENTS = 'component-base-installer component-base-node component-gnome-desktop'
 
 class RpmInstallReceiver(object):
 
-    def _disableIptablesKusurc(self):
+    def _disableKusurcScript(self, kusurc_filename):
         kusurc_dir = path('/etc/rc.kusu.d')
-        iptables_kusurc_filename = 'S03KusuIptables.rc.py'
-        iptables_kusurc = kusurc_dir / iptables_kusurc_filename
+        kusurc_script = kusurc_dir / kusurc_filename
+        if not kusurc_script.exists(): return
         firstrun_dir = kusurc_dir / 'firstrun'
         if not firstrun_dir.isdir(): firstrun_dir.makedirs()
-        iptables_kusurc.move(firstrun_dir)
-        for f in kusurc_dir.glob(iptables_kusurc_filename + '*'):
+        kusurc_script.move(firstrun_dir)
+        for f in kusurc_dir.glob(kusurc_filename + '*'):
             f.remove()
 
     def installRPMs(self, repoid):
@@ -61,9 +62,15 @@ class RpmInstallReceiver(object):
         distro = name.lower()
 
         if distro in osfamily.getOSNames('rhelfamily') + ['fedora']:
-            return self._install_rhel_rpms(repoid)
+            _install_successful = self._install_rhel_rpms(repoid)
         else:
-            return self._install_sles_rpms(repoid)
+            _install_successful = self._install_sles_rpms(repoid)
+
+        if _install_successful:
+            for script_name in ['S03KusuIptables.rc.py', 'S99KusuXorg.rc.py']:
+                self._disableKusurcScript(script_name)
+
+        return _install_successful
 
     def _install_rhel_rpms(self, repoid):
         self._repoTemplate = '''[bootstraprepo]
@@ -79,7 +86,8 @@ gpgcheck=0
         yum_file.file.writelines(repoText)
         yum_file.flush()
 
-        yumCmd = subprocess.Popen("yum -c %s -y install %s" % (yum_file.name, KUSU_COMPONENTS), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        yumCmd = subprocess.Popen("yum -c %s -y install %s" % (yum_file.name, KUSU_COMPONENTS),
+                shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         result, err = yumCmd.communicate()
 
         yum_file.close()
@@ -90,31 +98,29 @@ gpgcheck=0
             time.sleep(1)
             continue
 
-        if yumCmd.returncode == 0:
-            self._disableIptablesKusurc()
-
         return yumCmd.returncode == 0 #assume success if returncode == 0
 
     def _install_sles_rpms(self, repoid):
         repo_dir = "file:///depot/repos/%s" % repoid
         # Add service
-        zypper_service_add = "%s %s %s" % (ZYPPER_CMD, ZYPPER_SERVICE_ADD_OPTIONS, repo_dir)
-        service_add_cmd = subprocess.Popen(zypper_service_add, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        zypper_service_add = "%s %s %s %s" % (ZYPPER_CMD, ZYPPER_SERVICE_ADD_OPTIONS,
+                repo_dir, ZYPPER_SERVICE_ALIAS)
+        service_add_cmd = subprocess.Popen(zypper_service_add, shell=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = service_add_cmd.communicate()
         if service_add_cmd.returncode:
             message.failure("\nNot able to perform zypper service-add: %s" % err)
             return False
 
-        zypper_install_components = "%s %s" % (Dispatcher.get('zypper_install_cmd', ''), KUSU_COMPONENTS)
-        install_cmd = subprocess.Popen(zypper_install_components, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        zypper_install_components = "%s %s" % \
+                (Dispatcher.get('zypper_install_cmd', ''), KUSU_COMPONENTS)
+        install_cmd = subprocess.Popen(zypper_install_components, shell=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = install_cmd.communicate()
 
         if install_cmd.returncode:
             message.failure("\nNot able to install RPMs: %s" % err)
             return False
-
-        if install_cmd.returncode == 0:
-            self._disableIptablesKusurc()
 
         return True
 
