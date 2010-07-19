@@ -19,44 +19,25 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
 
 import os
+import shutil
 from time import sleep
-from primitive.support.util import runCommand
-from primitive.core.errors import ModuleException
+
+try:
+    import subprocess
+except:
+    from popen5 import subprocess
+
 from kusu.kitops.kitops import KitOps
 import kusu.core.database as db
+from primitive.core.errors import ModuleException
+from primitive.support.util import runCommand
+from primitive.system.software import probe as softprobe
 import message
+from rpminstallreceiver import ZYPPER_SERVICE_ALIAS, KUSU_COMPONENTS
 
-#CHECK_DB_COMMAND = "PGPASSWORD=%s psql -U postgres -l | grep kusudb"
 DROP_DB_COMMAND = "PGPASSWORD=%s psql -U postgres -c 'drop database kusudb'"
 POSTGRES_DB_COMMAND = ['psql', 'kusudb', 'nobody', '--command', 'select * from appglobals;']
-
-KUSU_RPM_LIST = [
-'kusu-buildkit',
-'kusu-ui',
-'kusu-networktool',
-'kusu-primitive',
-'kusu-uat',
-'kusu-net-tool',
-'kusu-core',
-'kusu-repoman',
-'kusu-md5crypt',
-'kusu-license-tool',
-'kusu-base-installer',
-'kusu-kitops',
-'kusu-path',
-'kusu-appglobals-tool',
-'kusu-nodeinstaller',
-'kusu-hardware',
-'kusu-shell',
-'kusu-kit-install',
-'kusu-power',
-'kusu-base-node',
-'kusu-driverpatch',
-'kusu-boot',
-'kusu-release',
-'kusu-util',
-'kusu-nodeinstaller-patchfiles'
-]
+KUSU_RPM_LIST_COMMAND = 'rpm -qa|grep ^kusu-|grep -v kusu-setup'
 
 class CleanupReceiver(object):
     """
@@ -138,21 +119,38 @@ class CleanupReceiver(object):
         self._dirtyFlag = dirtyFlag
         return dirtyFlag
 
+    def os_name(self):
+        name, ver, arch = softprobe.OS()
+        return name.lower()
+
+    def remove_rpm(self, rpm_name):
+        try:
+            outStr, errStr = runCommand('rpm -e --nodeps --noscripts %s' % rpm_name)
+        except ModuleException:
+            pass
+
+    def kusu_rpm_list(self):
+        out, err = runCommand(KUSU_RPM_LIST_COMMAND)
+        return out.split('\n')
+
     def cleanup(self):
         """
             This method completely removes all traces of a kusu
             install from the system.
         """
         if self._dirtyFlag:
+
             #remove all RPMs
             if self._need_to_remove_rpms:
+                kusu_components = KUSU_COMPONENTS.split()
                 message.display("\nRemoving Kusu component RPMs...")
-                outStr, errStr = runCommand("yum -y remove component-base-installer component-base-node component-gnome-desktop")
+                for kusu_component in kusu_components:
+                    self.remove_rpm(kusu_component)
                 message.success()
 
                 message.display("\nRemoving Kusu RPMs...")
-                rpmList = ' '.join(KUSU_RPM_LIST)
-                outStr, errStr = runCommand("yum -y remove %s" % rpmList)
+                for kusu_rpm in self.kusu_rpm_list():
+                    self.remove_rpm(kusu_rpm)
                 message.success()
 
             #drop kusudb
@@ -172,14 +170,22 @@ class CleanupReceiver(object):
 
             #remove /depot
             if self._need_to_remove_depot:
+
+                # For SLES, remove the zypper source added by kusu-setup first.
+                if self.os_name() in ['sles', 'opensuse', 'suse']:
+                    cmd = 'zypper sl | grep %s' % ZYPPER_SERVICE_ALIAS
+                    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+                    p.communicate()
+                    if p.returncode == 0:
+                        runCommand('zypper sd %s' % ZYPPER_SERVICE_ALIAS)
+
                 message.display("\nRemoving '/depot'...")
-                import shutil
                 try:
                     if os.path.islink('/depot'):
                         realpath = os.path.realpath('/depot')
                         shutil.rmtree(realpath)
                         os.remove('/depot')
-                        message.success()
 
                     elif os.path.ismount('/depot'):
                         #remove all kusu subfolders, leaving /depot intact
@@ -189,11 +195,10 @@ class CleanupReceiver(object):
                             if os.path.exists('/depot/%s' % subdir):
                                 shutil.rmtree('/depot/%s' % subdir)
 
-                        message.success()
-
                     elif os.path.exists('/depot'):
                         shutil.rmtree("/depot")
-                        message.success()
+
+                    message.success()
 
                 except Exception, msg:
                     message.failure("\nNot able to remove '/depot'. %s" % msg)
