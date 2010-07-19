@@ -17,14 +17,14 @@
 # 
 
 
-NAME = initrd-templates
+NAME = kusu-initrd-templates
 
 TOPDIR = $(PWD)/../..
 
 include ../../../../rhn/params.inc.mak
 
 preprpm:
-	rsync -a ../../SPECS/initrd-templates.spec mkinitrd-templates \
+	rsync -a ../../SPECS/kusu-initrd-templates.spec mkinitrd-templates \
         ./overlay ./etc $(RPMSRCROOT) --exclude .svn/
 
 clean:

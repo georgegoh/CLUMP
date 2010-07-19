@@ -14,14 +14,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 # 
-# $Id$
+# $Id: initrd-templates.spec 3135 2009-10-23 05:42:58Z ltsai $
 # 
 
 %define initrd_builddir %name
 %define ARCH %(echo `arch` | sed 's/i[3456]86/i386/')
 
 Summary: Template Initial RAM disks for Image based installs
-Name: initrd-templates
+Name: kusu-initrd-templates
 Version: 2.1
 Release: 1
 License: LGPL/GPL
@@ -31,13 +31,13 @@ BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Requires: kusu-base-installer kusu-base-node
 BuildRequires: yum
-Source: initrd-templates-%{version}.%{release}.tar.gz
+Source: kusu-initrd-templates-%{version}.%{release}.tar.gz
 
 %description
 This package contains the script to generate Kusu base template initrds.
 
 %prep
-%setup -q -n initrd-templates
+%setup -q -n kusu-initrd-templates
 
 %build
 
@@ -64,8 +64,8 @@ touch $RPM_BUILD_ROOT/opt/kusu/initrds/rootfs.%{ARCH}.cpio.gz
 mkdir -p $RPM_BUILD_ROOT/opt/kusu/lib/initrd
 
 # Copy overlay directory
-mkdir -p $RPM_BUILD_ROOT/opt/kusu/share/initrd-templates
-cp -ar --parents overlay/ $RPM_BUILD_ROOT/opt/kusu/share/initrd-templates
+mkdir -p $RPM_BUILD_ROOT/opt/kusu/share/kusu-initrd-templates
+cp -ar --parents overlay/ $RPM_BUILD_ROOT/opt/kusu/share/kusu-initrd-templates
 
 install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
 
@@ -73,12 +73,14 @@ install mkinitrd-templates $RPM_BUILD_ROOT/opt/kusu/sbin
 %dir /opt/kusu/initrds
 %ghost /opt/kusu/initrds/rootfs.%{ARCH}.cpio.gz
 /opt/kusu/etc/depmod.pl
-/opt/kusu/etc/imageinit.py*
+/opt/kusu/etc/imageinit.py
+/opt/kusu/etc/imageinit.pyc
+/opt/kusu/etc/imageinit.pyo
 /opt/kusu/etc/imageinit.sh
 %config(noreplace) /opt/kusu/etc/templates/mkinitrd-templates.tmpl
 %config(noreplace) /opt/kusu/etc/templates/mkinitrd-templates.sles.tmpl
 /opt/kusu/sbin/mkinitrd-templates
-/opt/kusu/share/initrd-templates
+/opt/kusu/share/kusu-initrd-templates
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -87,7 +89,20 @@ rm -rf $RPM_BUILD_ROOT
 * Tue Jun 16 2009 Chew Meng Kuan <mkchew@platform.com> 5.3-1
 - Bump version to 5.3 for PCM 1.2.1.
 
-* Mon Oct 13 2008 Tsai Li Ming <ltsai@osgdc.org> 1.0-1
-- Sync with OCS (r1609)
-- Initial 1.0 release
+* Thu Nov 6 2008 Mark Black <mblack@platform.com> 5.1-10
+- Change package to allow for other architectures
 
+* Thu Aug 21 2008 Mark Black <mblack@platform.com> 5.1-9
+- Reving tar file for RH
+
+* Thu Jul 31 2008 Mark Black <mblack@platform.com> 5.1-8
+- Reset version/revision after switching build to trunk
+
+* Mon Jun 2 2008 Mike Frisch <mfrisch@platform.com> 5.1-7
+- Add missing copyright
+
+* Wed May 28 2008 Mike Frisch <mfrisch@platform.com> 5.1-6
+- Remove mkinitrd-templates from post section (#109455)
+
+* Thu May 15 2008 Mike Frisch <mfrisch@platform.com> 5.1-5
+- Use RH system files to generate initrd (#108335)

@@ -81,7 +81,7 @@ Requires: environment-modules
 Requires: python-cheetah
 Requires: python-sqlite2
 Requires: python-IPy
-Requires: initrd-templates
+Requires: kusu-initrd-templates
 Requires: pyparted
 Requires: rsh
 Requires: kusu-net-tool

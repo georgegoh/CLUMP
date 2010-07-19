@@ -191,7 +191,7 @@ PKG_UTIL_SOURCES = doc src/lib src/etc
 
 # Initrd Templates package.
 KIT_PKGS += PKG_INITRD_TEMPLATES
-PKG_INITRD_TEMPLATES_SPEC = initrd-templates.spec
+PKG_INITRD_TEMPLATES_SPEC = kusu-initrd-templates.spec
 PKG_INITRD_TEMPLATES_SOURCES = etc overlay mkinitrd-templates
 
 # Kusu Autoinstall package.
