@@ -406,8 +406,6 @@ class PluginRunner:
                                                self.dbs.Nodes.c.name == node_name)
             if ng:
                 repoid = ng[0].repoid
-            if not repoid:
-                repoid = self.dbs.Repos.select()[0].repoid
               
         return repoid
 

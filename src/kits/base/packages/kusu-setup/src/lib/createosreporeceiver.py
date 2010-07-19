@@ -44,18 +44,11 @@ class CreateOSRepoReceiver(object):
         """ This method updates our temporary DELETEME repo, and creates
             the new repo with id 1000. This new repo must be refreshed.
         """
-        #from kusu.repoman.repofactory import RepoFactory
-
         os_kit_id =  self.__db.Kits.select_by(self.__db.Kits.c.isOS == True)[0]
 
         os_kit_info =  self.__db.OS.select_by(self.__db.OS.c.osid == os_kit_id.osid)[0]
 
-     #   rfactory = RepoFactory(self.__db, path("/"))
-        #ngname = 'installer' + '-' + kiprofile['Kits']['longname']
-        #reponame = kiprofile['Kits']['longname']
         reponame = '%s-%s.%s-%s' % (os_kit_info.name, os_kit_info.major, os_kit_info.minor, os_kit_info.arch)
-
-        #logger.debug('Making repo')
 
         repo = self.__db.Repos()
         repo.reponame = reponame
@@ -73,25 +66,17 @@ class CreateOSRepoReceiver(object):
         repo.save()
         repo.flush()
 
-        #if depot_partition is not pointing at the root filesystem, we must create symlink
-        #depot_location = depot_partition[0].strip()
-        #if depot_location != '/' and depot_location != '/depot':
-        #   ( path(depot_location) / 'depot').makedirs()
-        #   symlink_target = ( path(depot_location) / 'depot')
-        #   os.symlink(str(symlink_target), '/depot')
-        #elif depot_location == '/depot':
-        #    symlink_target =  path('/depot')
-        #else:
-        #    #default handling.
-        #    (path(depot_location) / 'depot').makedirs()
-        #    symlink_target = path('/depot')
-
         location = "/depot/repos/%s" % repo.repoid
         path(location).makedirs()
 
         repo.repository = location
         repo.save()
         repo.flush()
+
+        ng = self.__db.NodeGroups.select_by(type = 'installer')[0]
+        ng.repoid = repo.repoid
+        ng.save()
+        ng.flush()
 
         #expose repo_name and repo_id properties
         self.default_repo_name = repo.reponame
