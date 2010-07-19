@@ -78,11 +78,12 @@ class CleanupReceiver(object):
     def dbIsAvailable(self):
 
         try:
-            returncode = subprocess.call(POSTGRES_DB_COMMAND)
+            runP = subprocess.Popen(POSTGRES_DB_COMMAND, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            runP.communicate()
         except:
             return False
 
-        if returncode:
+        if runP.returncode:
             return False
 
         return True
