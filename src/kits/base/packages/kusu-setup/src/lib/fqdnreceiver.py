@@ -37,8 +37,10 @@ class FQDNReceiver(object):
         self.pub_domain = None
 
     def pub_dns_discover(self):
-        self.pub_domain = socket.gethostname()
-        return verifyFQDN(self.pub_domain)[0]
+        self.pub_domain = socket.getfqdn()
+
+        return (len(self.pub_domain.split('.'))>1 and \
+                verifyFQDN(self.pub_domain)[0])
 
     def get_fqdn(self):
         """ Interface to expose the provision and public domains. """
