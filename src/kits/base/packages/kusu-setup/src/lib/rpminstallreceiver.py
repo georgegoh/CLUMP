@@ -75,7 +75,7 @@ class RpmInstallReceiver(object):
     def _install_rhel_rpms(self, repoid):
         self._repoTemplate = '''[bootstraprepo]
 name=BootstrapRepo
-baseurl=file://///depot/repos/%s%s
+baseurl=file:///depot/repos/%s%s
 enabled=1
 gpgcheck=0
 '''
@@ -86,8 +86,9 @@ gpgcheck=0
         yum_file.file.writelines(repoText)
         yum_file.flush()
 
-        yumCmd = subprocess.Popen("yum -c %s -y install %s" % (yum_file.name, KUSU_COMPONENTS),
-                shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = "yum -c %s -y install %s" % (yum_file.name, KUSU_COMPONENTS)
+        yumCmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
         result, err = yumCmd.communicate()
 
         yum_file.close()
@@ -97,6 +98,10 @@ gpgcheck=0
         while yumCmd.returncode is None:
             time.sleep(1)
             continue
+
+        if yumCmd.returncode:
+            message.failure("\nNot able to install RPMs: %s" % err)
+            return False
 
         return yumCmd.returncode == 0 #assume success if returncode == 0
 
@@ -117,6 +122,11 @@ gpgcheck=0
         install_cmd = subprocess.Popen(zypper_install_components, shell=True,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = install_cmd.communicate()
+
+        #Loop until we have an exit status from zypper
+        while install_cmd.returncode is None:
+            time.sleep(1)
+            continue
 
         if install_cmd.returncode:
             message.failure("\nNot able to install RPMs: %s" % err)
