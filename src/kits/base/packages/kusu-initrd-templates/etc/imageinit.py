@@ -590,6 +590,12 @@ class DirtyLittlePartitioner:
             kern = os.path.basename(flist[0])
             kver = kern[len('vmlinuz-'):]
             initrd = 'initrd-%s' % kver
+            # Currently locate the initrd file ending with or not with '.img' 
+            flist = glob.glob('/newroot/boot/%s*' % initrd)
+            if not flist:
+                print "ERROR:  Unable to locate the initrd for imaged nodes!"
+                sys.exit(-2)
+            initrd = os.path.basename(flist[0])
 
         if not os.path.exists('/newroot/etc/SuSE-release'):
             if not initrd[-4:] == '.img':

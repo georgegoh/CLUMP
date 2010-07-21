@@ -656,7 +656,10 @@ class scrNGEEdit_Repo(NGEBaseScreen):
             version =rv[1]
             arch = rv[2]
             curNG['kernel'] = "kernel-%s-%s.%s-%s" % (os.name , os.major, os.minor , os.arch)
-            curNG['initrd'] = "initrd-%s-%s.%s-%s.img" % (os.name , os.major, os.minor, os.arch)
+            # After changing the repoid, ensure the NG has 'proper' initrd.
+            # If install type is 'package', use the OS's default initrd file, else use the initrd file showed in database.
+            if curNG['installtype'] == 'package':
+                curNG['initrd'] = "initrd-%s-%s.%s-%s.img" % (os.name , os.major, os.minor, os.arch)
 
             curNG['kparams'] = Dispatcher.get('kparams', default='', os_tuple=os_tup)
             curNG['comps'] = []
@@ -3118,7 +3121,11 @@ class NGEApp(KusuApp):
 
                 # Set the default initrd and kernel for the new repos
                 currNG['kernel'] = "kernel-%s-%s.%s-%s" % (currOS.name , currOS.major, currOS.minor , currOS.arch)
-                currNG['initrd'] = "initrd-%s-%s.%s-%s.img" % (currOS.name , currOS.major, currOS.minor, currOS.arch)
+                # After changing the repoid, ensure the NG has 'proper' initrd.
+                # If install type is 'package', use the OS's default initrd file, else use the initrd file showed in 
+                # database.
+                if currNG['installtype'] == 'package':
+                    currNG['initrd'] = "initrd-%s-%s.%s-%s.img" % (currOS.name , currOS.major, currOS.minor, currOS.arch)
 
                 currNG['kparams'] = Dispatcher.get('kparams', default='', os_tuple=os_tup)
                 if currNG['installtype'] == 'disked':

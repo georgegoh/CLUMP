@@ -31,6 +31,10 @@ fedora_diskless_packages =  rhel_fedora_diskless_packages + ['fedora-release']
 
 rhel_imaged_packages = rhel_diskless_packages + ['grub', 'kernel']
 fedora_imaged_packages = fedora_diskless_packages + ['grub', 'kernel']
+sl_imaged_packages = sl_diskless_packages + ['grub', 'kernel']
+slc_imaged_packages = slc_diskless_packages + ['grub', 'kernel']
+centos_imaged_packages = centos_diskless_packages + ['grub', 'kernel']
+
 
 standard_diskless_modules = ['uhci-hcd', 'ohci-hcd', 'ehci-hcd', 'jbd', 'nfs',
 'ext3', 'libphy', 'tg3', 'bnx2', 'bnx2x', '8021q', 'igb', 'ixgbe', 'cxgb3',
@@ -376,10 +380,16 @@ dispatcher_dict = {
                           },
     'imaged_packages' : { ('SLES','10','i386') : sles_imaged_packages,
                           ('SLES','10','x86_64') : sles_imaged_packages,
+                          ('CENTOS','5','i386') : centos_imaged_packages,
+                          ('CENTOS','5','x86_64') : centos_imaged_packages,
                           ('RHEL','5','i386') : rhel_imaged_packages,
                           ('RHEL','5','x86_64') : rhel_imaged_packages,
                           ('FEDORA','6','i386') : fedora_imaged_packages,
                           ('FEDORA','6','x86_64') : fedora_imaged_packages,
+                          ('SCIENTIFICLINUX','5','i386') : sl_imaged_packages,
+                          ('SCIENTIFICLINUX','5','x86_64') : sl_imaged_packages,
+                          ('SCIENTIFICLINUXCERN','5','i386') : slc_imaged_packages,
+                          ('SCIENTIFICLINUXCERN','5','x86_64') : slc_imaged_packages,
                         },
     'diskless_modules' : { ('SLES','10','i386') : sles_diskless_modules,
                            ('SLES','10','x86_64') : sles_diskless_modules,
