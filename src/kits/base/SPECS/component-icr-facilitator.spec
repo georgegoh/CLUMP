@@ -25,6 +25,11 @@ BuildArch: noarch
 Source: %{name}-%{version}.%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Requires(post): grep, procps, coreutils, net-tools, openssl, shadow-utils
+Requires: pciutils
+Requires: ksh
+Requires: tcsh
+Requires: gcc-c++
+Requires: libpcap
 Requires: libgtk-java
 Requires: compat-libstdc++-33
 Requires: imake
@@ -102,7 +107,7 @@ if [ -e /var/lock/subsys/kusu-installer ]; then exit 0; fi
 cat > '/opt/kusu/lib/plugins/cfmclient/S99-icr.sh' << EOSCRIPT
 #!/bin/sh
 # If kusu repo not been set up, exit.
-if [ ! -e /etc/yum.repos.d/kusu-compute.repo ]; then exit 0; fi
+! [ -e /etc/yum.repos.d/kusu-compute.repo -o /etc/yum.repos.d/kusu-installer.repo ] && exit 0; 
 
 if [ -f /etc/rc.kusu.d/S99intel-cluster-ready ];
 then

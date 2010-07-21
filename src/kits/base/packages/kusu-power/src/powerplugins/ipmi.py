@@ -80,9 +80,14 @@ class ipmi(kusu.power.Plugin):
                 status = kusu.power.STATUSOFF
         else:
             self.log.debug("%s: Status command failed for node %s (%s)" % (self.__name__, node, result))
-
         return status
 
+    # Added for PCM GUI
+    def getInfo(self, node, options):
+        self.log.debug("%s: Obtaining information for %s" % (self.__name__, node))
+        result = self._runCmd(options, "lan print")
+        return "\n" + result
+    
     def powerOff(self, node, options):
         self.log.debug("%s: Turning off %s" % (self.__name__, node))
         result = self._runCmd(options, "chassis power off")

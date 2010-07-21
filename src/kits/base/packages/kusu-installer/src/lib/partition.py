@@ -261,6 +261,14 @@ class PartitionScreen(InstallerScreen):
                                          "%s\nThe installer will now\
  exit." % (e) , ['Ok'])
             raise UserExitError, 'Rebooting due to error'
+        except InsufficientFreeSpaceInVolumeGroupError,e:
+            self.selector.popupDialogBox('Insufficient Free Space In VolumeGroup Error',
+                                          "%s\n \
+                                          Installer now exiting due to insufficient free disk space." % (e) , ['Ok'])
+            raise UserExitError, 'Rebooting due to insufficient free disk space error'
+        except Exception,e:
+            self.selector.popupDialogBox('Exception', "%s\nInstaller now exiting." % (e), ['OK'])
+            raise UserExitError, 'Rebooting due to error'
 
 
     def promptForDefaultSchema(self):
@@ -301,8 +309,7 @@ class PartitionScreen(InstallerScreen):
             if str(result) == 'use default':
                 self.useSchema(vanillaSchemaLVM(), do_not_use_disks)
             elif str(result) == 'clear all partitions':
-                msg = 'Really clear all existing partitions? You cannot retrieve your '
-                msg += 'existing partitions after proceeding.'
+                msg = 'Clear all existing partitions? You will no longer be able to retrieve cleared partitions.'
                 result = self.selector.popupYesNo('Really clear partitions?', msg, defaultNo=True)
                 if result:
                     logger.debug('Clear all partitions')

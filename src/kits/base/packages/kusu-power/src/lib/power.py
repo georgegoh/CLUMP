@@ -104,6 +104,9 @@ class Node:
     def uidOn(self):
         return self.device.plugin.uidOn(self.__name__, self.options)
 
+    def getInfo(self):
+        return self.device.plugin.getInfo(self.__name__, self.options)
+
 
 class Plugin:
     """Super-class for plugins that "power" configures"""

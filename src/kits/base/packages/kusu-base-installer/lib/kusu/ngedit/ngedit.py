@@ -2377,7 +2377,7 @@ class NodeGroup(NodeGroupRec):
         expire = None
         diff_keys = Set(diffNG.keys())
 
-        if diff_keys:
+        if diff_keys and self['installtype'] != 'multiboot':
             reinst_keys = Set(['installtype', 'repoid', 'parts', 'modules',
                                'scripts', 'kernel', 'kparams'
                               ])

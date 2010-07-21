@@ -166,6 +166,7 @@ def getSpacesAvailable(disk, min_size=1048576, first_usable_sector=63):
     # partition is less than 3.
     # See documentation above for the states which do not work.
     no_of_primary_and_extended_partitions = len(primary)
+    free_spaces = []
     if extended:
         no_of_primary_and_extended_partitions += 1
     if no_of_primary_and_extended_partitions < 4:

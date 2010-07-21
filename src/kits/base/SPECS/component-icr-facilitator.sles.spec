@@ -25,6 +25,11 @@ BuildArch: noarch
 Source: %{name}-%{version}.%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Requires(post): grep, procps, coreutils, net-tools, openssl, pwdutils
+Requires: pciutils
+Requires: ksh
+Requires: tcsh
+Requires: gcc-c++
+Requires: libpcap
 Requires: libstdc++33
 Requires: libstdc++33-32bit
 Requires: xorg-x11

@@ -263,6 +263,18 @@ class KusuRC(rcplugin.Plugin):
                 return False
         return True
 
+    def getLanChannel(self):
+        """Checks channels 1-7 for a Lan channel and returns it"""
+        cmd = '/usr/bin/ipmitool channel info %s' 
+        for i in xrange(1,8):
+            p = subprocess.Popen(cmd % i, shell=True, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+            out, err= p.communicate()
+            if out:
+                logger.debug("Found a valid channel in %i" %i)
+                return i
+        logger.error("Unable to find a valid Lan channel! %s" % out)
+        return False
 
     def setupIpmiDefault(self):
         """ Configures IPMI using the default method """
@@ -271,16 +283,21 @@ class KusuRC(rcplugin.Plugin):
             print "Unable to find a valid ID for a new IPMI user."
             logger.error("%s: Unable to find a valid ID for a new IPMI user." % self.name)
             return False
+        channel = self.getLanChannel()
+        if not channel:
+            return False
         try:
-            pollCommand('/usr/bin/ipmitool -I open lan set 1 ipaddr %s' % self.ipAddress)
-            pollCommand('/usr/bin/ipmitool -I open lan set 1 defgw ipaddr %s' % self.gatewayIpAddress)
-            pollCommand('/usr/bin/ipmitool -I open lan set 1 netmask %s' % self.netmask)
-            pollCommand('/usr/bin/ipmitool -I open lan set 1 access on')
+            pollCommand('/usr/bin/ipmitool -I open lan set %s ipsrc static' % channel)
+            pollCommand('/usr/bin/ipmitool -I open lan set %s ipaddr %s' % (channel,self.ipAddress))
+            pollCommand('/usr/bin/ipmitool -I open lan set %s defgw ipaddr %s' % (channel,self.gatewayIpAddress))
+            pollCommand('/usr/bin/ipmitool -I open lan set %s netmask %s' % (channel,self.netmask))
+            pollCommand('/usr/bin/ipmitool -I open lan set %s access on' % channel)
             if not userExists and emtpyId:
                 pollCommand('/usr/bin/ipmitool -I open user set name %s %s' % (emtpyId, self.ipmiUserName))
-                pollCommand('/usr/bin/ipmitool -I open user enable %s' % emtpyId)
-                pollCommand('/usr/bin/ipmitool -I open user priv %s 4 1' % emtpyId) # set the privilege level of the user to "Administrator"
             pollCommand('/usr/bin/ipmitool -I open user set password %s %s' % (emtpyId, self.ipmiPassword))
+            pollCommand('/usr/bin/ipmitool -I open user priv %s 4 %s' % (emtpyId,channel)) # set the privilege level of the user to "Administrator"
+            pollCommand('/usr/bin/ipmitool -I open user enable %s' % emtpyId)
+            pollCommand('/usr/bin/ipmitool -I open sol payload enable %s %s' % (channel, emtpyId)) # enanle the sol for kusu-ipmi user
         except OSError, osException:
             print "ipmitool failed: %s" % osException
             logger.error("%s: ipmitool failed: %s" % (self.name, osException))
@@ -289,7 +306,12 @@ class KusuRC(rcplugin.Plugin):
 
 
     def checkIpmiUsers(self):
-        (data, error) = runCommand('/usr/bin/ipmitool -I open user list 1')
+        cmd = '/usr/bin/ipmitool -I open user list 1'
+        p = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        
+        (data,error) = p.communicate()
+#         (data, error) = runCommand('/usr/bin/ipmitool -I open user list 1')
         rows = data.split("\n")
 
         # remove the first element from the list

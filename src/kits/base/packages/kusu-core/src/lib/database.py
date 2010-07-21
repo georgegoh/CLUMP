@@ -252,7 +252,7 @@ class Networks(BaseTable):
     cols = ['network', 'subnet', 'device', 'suffix', \
             'gateway', 'options', 'netname', 'startip', \
             'inc', 'type', 'usingdhcp']
-    types = ['public', 'provision', 'other']
+    types = ['public', 'provision']
     def __repr__(self):
         return '%s(%r,%r,%r,%r,%r,%r,%r,%r,%r,%r)' % \
                (self.__class__.__name__, self.network, self.subnet,

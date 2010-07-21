@@ -85,6 +85,9 @@ def doAction(nodename, action):
             result = node.uidOff()
         elif action == "uidon":
             result = node.uidOn()
+        elif action == "info":
+            #currently only available for IPMI
+            result = node.getInfo()
         else:
             raise Exception, "Invalid action '%s'" % action
     except Exception, e:
