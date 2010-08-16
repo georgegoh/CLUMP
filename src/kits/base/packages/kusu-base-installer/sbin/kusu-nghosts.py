@@ -387,7 +387,7 @@ class NodeMemberApp(object, KusuApp):
             print "\n"
             # Get a list of all node groups to iterate though:
             database.connect()
-            database.execute("SELECT ngid,ngname FROM nodegroups")
+            database.execute("SELECT ngid,ngname FROM nodegroups where type != 'installer'")
             ng = database.fetchall()
             for groupid, groupname in ng:
                 database.execute("select nodes.name, nodes.state from nodes WHERE NOT nodes.name=(SELECT kvalue FROM appglobals \
@@ -462,6 +462,9 @@ class NodeMemberApp(object, KusuApp):
 
                     # Find out the type of the destination nodegroup
                     togroup_type = getNodegroupType(database, self._options.togroup.strip())
+                    if togroup_type == 'installer':
+                        self.logErrorEvent(self._("Nodes cannot be moved into installer nodegroups"))
+                        self.exitFailedAndUnlock(-1)
 
                     nodeRecord.setNodegroupByName(self._options.togroup)
                     nodeRecord.getNodeFormat()
@@ -904,7 +907,7 @@ class SelectNodesWindow(USXBaseScreen):
         labeltokens = self.kusuApp._("nghosts_source_label").split(',')
         label = snack.Label(self.kusuApp._("%s %s" % (labeltokens[0].ljust(29),labeltokens[1])))
         #self.reinstcheckbox = snack.Checkbox(self.kusuApp._("Reinstall Nodes"), isOn = 0)
-        query = 'SELECT ngname, ngid FROM nodegroups ORDER BY ngid'
+        query = "SELECT ngname, ngid FROM nodegroups where type != 'installer' ORDER BY ngid"
         
         try:
             self.database.connect()

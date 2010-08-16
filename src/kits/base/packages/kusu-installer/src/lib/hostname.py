@@ -28,6 +28,7 @@ class FQHNScreen(InstallerScreen, profile.PersistentProfile):
     """Collects fully-qualified host name."""
 
     profile = 'Network'
+    name = _('Host Information')
     netProfile = None   # we assign the Network profile to this local variable
     buttons = [_('Clear All')]
     domain_msg = _('The domain to use inside the cluster')

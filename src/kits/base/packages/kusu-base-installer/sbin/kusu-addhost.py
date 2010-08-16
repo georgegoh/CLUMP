@@ -288,6 +288,11 @@ class AddHostApp(KusuApp):
             myNodeInfo.ngname = self._options.nodegroup.strip()
             self.haveNodegroup = True
 
+            ngtype = getNodegroupType(self._db, myNodeInfo.ngname )
+            if ngtype == 'installer':
+                self.logErrorEvent(kusuApp._("Nodes cannot be added to installer nodegroups"))
+                self.exitFailedAndUnlock(-1)
+
             if self._options.ipaddr:
                 myNodeInfo.staticIPAddrOfManagedNode = self._options.ipaddr.strip()
 
@@ -1236,7 +1241,7 @@ class NodeGroupBatch:
     def getNodeGroupList(self):
         nodeGroups = ()
         try:
-            query = "SELECT ngname, ngid FROM nodegroups ORDER BY ngid"
+            query = "SELECT ngname, ngid FROM nodegroups where type != 'installer' ORDER BY ngid"
             self.database.execute(query)
             nodeGroups = self.database.fetchall()
         except:
