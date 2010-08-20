@@ -194,6 +194,7 @@ actions:
         """Handler for provision. args is a dict of supported key-value pairs for this action. """
         niihost = args.get('niihost',None)
         kl.addSysLogHandler(host=niihost)
+        pl.addSysLogHandler(host=niihost)
 
         disks_dict = probe.getDisks()
         disks_str = disks_dict.keys()
