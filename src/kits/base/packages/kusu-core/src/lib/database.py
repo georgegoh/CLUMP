@@ -423,7 +423,7 @@ class DB(object):
 
     def __init__(self, driver, db=None, username=None, password=None,
                  host='localhost', port=None, entity_name=None):
-        """Initialize the database with the corrrect driver and account
+        """Initialize the database with the correct driver and account
            details"""
 
         if not db and driver == 'sqlite':
