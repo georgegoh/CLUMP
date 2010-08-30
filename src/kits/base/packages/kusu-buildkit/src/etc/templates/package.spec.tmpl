@@ -31,20 +31,21 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 This package installs the $pkgname module runtime.
 
 %prep
-mkdir -p %{buildroot}%{_approot}
+mkdir -p %{buildroot}
 
 %install
 cd %{_builddir}/%{name}-%{version}-%{release}
-find bin/ | cpio -mpdu %{buildroot}%{_approot}
-find sbin/ | cpio -mpdu %{buildroot}%{_approot}
-find etc/ | cpio -mpdu %{buildroot}%{_approot}
-find info/ | cpio -mpdu %{buildroot}%{_approot}
-find include/ | cpio -mpdu %{buildroot}%{_approot}
-find lib/ | cpio -mpdu %{buildroot}%{_approot}
-find man/ | cpio -mpdu %{buildroot}%{_approot}
-find share/ | cpio -mpdu %{buildroot}%{_approot}
-find opt/ | cpio -mpdu %{buildroot}%{_approot}
-find usr/ | cpio -mpdu %{buildroot}%{_approot}
+find bin/ | cpio -mpdu %{buildroot}
+find sbin/ | cpio -mpdu %{buildroot}
+find etc/ | cpio -mpdu %{buildroot}
+find info/ | cpio -mpdu %{buildroot}
+find include/ | cpio -mpdu %{buildroot}
+find lib/ | cpio -mpdu %{buildroot}
+find man/ | cpio -mpdu %{buildroot}
+find share/ | cpio -mpdu %{buildroot}
+find opt/ | cpio -mpdu %{buildroot}
+find usr/ | cpio -mpdu %{buildroot}
+find depot/ | cpio -mpdu %{buildroot}
 
 %pre
 #if $varExists('prescript')
@@ -67,9 +68,8 @@ $postunscript
 #end if
 
 %clean
-rm -rf %{buildroot}%{_approot}
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%{_approot}
-
+/
