@@ -20,7 +20,7 @@
 #
 
 from kusu.buildkit.builder import PackageProfile, BuildProfile
-from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper
+from kusu.buildkit.builder import AutoToolsWrapper, RPMWrapper, DistroPackageWrapper, BinaryPackageWrapper, SRPMWrapper, BinaryDirectoryWrapper
 from kusu.util.errors import UndefinedOSType
 from kusu.buildkit.strategy import KusuKitFactory, KusuComponentFactory
 
@@ -187,6 +187,11 @@ def BinaryPackage(**kwargs):
     """ This is used to handle binary distribution packages. """
     return Package(srctype='binary')
 
+def BinaryDirectory(**kwargs):
+    """ This is used to handle binary distribution packages. """
+    return Package(srctype='binarydir')
+
+
 def DistroPackage(**kwargs):
     """ This is used to handle distro packages. """
     kwargs['srctype'] = 'distro'
@@ -213,6 +218,8 @@ def Package(**kwargs):
         pkg = PackageProfile(AutoToolsWrapper(),**kwargs)
     elif kwargs['srctype'] == 'binary':
         pkg = PackageProfile(BinaryPackageWrapper(),**kwargs)
+    elif kwargs['srctype'] == 'binarydir':
+        pkg = PackageProfile(BinaryDirectoryWrapper(),**kwargs)
     elif kwargs['srctype'] == 'distro':
         pkg = PackageProfile(DistroPackageWrapper(),**kwargs)
     elif kwargs['srctype'] == 'rpm':

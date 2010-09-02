@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # $Id$
 #
 # Copyright 2007 Platform Computing Inc.
@@ -24,7 +25,7 @@ SUPPORTED_DISTROPKG_EXT = ['.src.rpm','.rpm','.srpm','.deb']
 def genrandomstr(length=8):
     chars = string.letters + string.digits
     return ''.join([choice(chars) for i in range(length)])
-    
+
 def stripShebang(script):
     """ Strip the shebang and returns the script text.
     """
@@ -34,10 +35,10 @@ def stripShebang(script):
         lines = li[1:]
     else:
         lines = li
-        
+
     return ''.join(lines)
-        
-    
+
+
 def derivePackageNVR(filenamestr):
     """ Tries to derive the name, version and release out of the filenamestr or
         returns tuple containing empty strings.
@@ -59,7 +60,7 @@ def derivePackageNVR(filenamestr):
     return ('','','')
 
 def setupRPMMacrofile(buildprofile):
-    """ Creates a proper .rpmmacros file for purposes of building kits. 
+    """ Creates a proper .rpmmacros file for purposes of building kits.
         If an existing .rpmmacros exists, it will be renamed and this
         function will return the old .rpmmacros file for safekeeping.
     """
@@ -74,7 +75,7 @@ def setupRPMMacrofile(buildprofile):
         _oldrpmmacros = path(_oldrpmmacros)
 
     rpmtopdir = path(buildprofile.builddir) / 'packages'
-    if not rpmtopdir.exists(): 
+    if not rpmtopdir.exists():
         rpmtopdir.mkdir()
         path(rpmtopdir / 'BUILD').mkdir()
         path(rpmtopdir / 'RPMS').mkdir()
@@ -90,7 +91,7 @@ def setupRPMMacrofile(buildprofile):
     f = open(rpmmacros,'w')
     f.write(str(t))
 
-    if rpmmacrosExists and _oldrpmmacros.exists(): 
+    if rpmmacrosExists and _oldrpmmacros.exists():
         return (True,_oldrpmmacros)
     else:
         return (False,None)
@@ -113,7 +114,7 @@ def prepareNS(packageprofile):
         d['preunscript'] = packageprofile.scripts['preunscript']
         d['postscript'] = packageprofile.scripts['postscript']
         d['postunscript'] = packageprofile.scripts['postunscript']
-                            
+
     return d
 
 
@@ -121,9 +122,9 @@ def getPackageSpecTmpl(templatesdir):
     """ Gets the specfile template for package. """
     root = path(templatesdir)
     spectmpl = root.files('package.spec.tmpl')[0]
-    
+
     return spectmpl
-    
+
 def getBuildKitTemplate(template, templatedir=None):
     """ Get the specfile for components. """
     if not templatedir:
@@ -133,9 +134,9 @@ def getBuildKitTemplate(template, templatedir=None):
     tmpl = tmpldir / template
 
     if not tmpl.exists(): raise FileDoesNotExistError
-    return tmpl    
-    
-    
+    return tmpl
+
+
 def getTemplateSpec(templatetype, templatedir=None):
     """ Get the specfile for components. """
     if not templatedir:
@@ -147,7 +148,7 @@ def getTemplateSpec(templatetype, templatedir=None):
 
     if not tmpl.exists(): raise FileDoesNotExistError
     return tmpl
-    
+
 def getScriptTemplate(scripttype, templatedir=None):
     """ Get the template for scripts. """
     if not templatedir:
@@ -180,7 +181,7 @@ def unpackTarfile(filename, destroot=None):
 
 class BuildProfile(Struct):
     """ Profile used to store build site configuration. """
-    
+
     def __init__(self, **kwargs):
         Struct.__init__(self,kwargs)
 
@@ -193,12 +194,12 @@ class PackageProfile(Struct):
         Wrapper object will need to be associated in order to provide
         functionality.
     """
-    
+
     def __init__(self, wrapper, **kwargs):
         Struct.__init__(self)
 
         self.wrapper = wrapper
-                    
+
         self.verbose = kwargs.get('verbose',False)
         self.srctype = kwargs.get('srctype','')
         self._name = kwargs.get('name','')
@@ -220,6 +221,7 @@ class PackageProfile(Struct):
         """ Preps the wrapper object with the attributes. This must be called before
             calling other operations.
         """
+        # TODO: The code in here is ripe for refactoring.
         self.builddir = path(self.buildprofile.builddir)
         self.srcdir = path(self.buildprofile.srcdir)
         self.pkgdir = path(self.buildprofile.pkgdir)
@@ -236,22 +238,25 @@ class PackageProfile(Struct):
             self.release = r.getRelease()
             self.arch = r.getArch()
             if not self.description: self.description = r.description[:255]
-            
-        elif self.srctype in  ['srpm','rpm','binarydist','autotools']:
+
+        elif self.srctype in  ['srpm','rpm','binarydist','binarydir','autotools']:
             # ensure that the name, version, release are defined.
             if not hasattr(self,'name'): raise PackageAttributeNotDefined, 'name'
             if not hasattr(self,'version'): raise PackageAttributeNotDefined, 'version'
-            if not hasattr(self,'release'): raise PackageAttributeNotDefined, 'release'            
+            if not hasattr(self,'release'): raise PackageAttributeNotDefined, 'release'
 
-        if not self.srctype in ['srpm','rpm','distro']:
-            
+        
+        if self.srctype == 'binarydir':
+            self.buildsrc = self.tmpdir / self.filename
+
+        elif not self.srctype in ['srpm','rpm','distro']:
             filename = self.srcdir / self.filename
             self.fullname = getDirName(filename.basename())
             self.buildsrc = self.tmpdir / self.fullname
-            
+
         # add the scripts attribute for those srctypes that
         # support them.
-        if self.srctype in ['autotools', 'binarydist']:
+        if self.srctype in ['autotools', 'binarydist', 'binarydir']:
             self.scripts = {}
             self.scripts['postscript'] = ''
             self.scripts['postunscript'] = ''
@@ -261,7 +266,7 @@ class PackageProfile(Struct):
         # expose the attributes to the wrapper object
         self.wrapper.update(Struct(self))
         self.wrapper.verbose=self.verbose
-        
+
     def _processAddScripts(self):
         """ Process any queued commands.
         """
@@ -272,7 +277,7 @@ class PackageProfile(Struct):
             else:
                 func = cmd[0]
                 args = []
-                
+
             func(*args)
 
     def verify(self):
@@ -303,17 +308,17 @@ class PackageProfile(Struct):
 
 class PackageWrapper(Struct):
     """ Base class. PackageWrapper provides easy access to attributes and
-        its methods deal with package operations such as verification, rpm 
+        its methods deal with package operations such as verification, rpm
         packaging and others.
     """
-    
+
     verbose = False
-    
+
     def __init__(self):
         """ Initializes the Struct class for easy access to attributes.
         """
         Struct.__init__(self)
-        
+
     def verify(self):
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         filename = self.srcdir / self.filename
@@ -333,25 +338,25 @@ class PackageWrapper(Struct):
         """ Build stage for this class. Override this to customize.
         """
 
-        pass      
+        pass
 
     def install(self, **kwargs):
         """ Installation stage for this class. Override this to customize.
         """
 
         pass
-        
+
     def addScript(self, script, mode='post'):
         pass
 
     def _packRPM(self, verbose=False):
-        """ RPM handling stage for this class. This package type-specific 
+        """ RPM handling stage for this class. This package type-specific
             and has to be implemented.
         """
         raise NotImplementedError
-        
+
     def _packDEB(self, verbose=False):
-        """ DEB handling stage for this class. This package type-specific 
+        """ DEB handling stage for this class. This package type-specific
             and has to be implemented.
         """
         raise NotImplementedError
@@ -361,26 +366,26 @@ class PackageWrapper(Struct):
 
         if pkgtype == 'rpm':
             return self._packRPM(verbose)
-            
+
         elif pkgtype == 'deb':
             return self._packDEB(verbose)
-            
+
 
 class AutoToolsWrapper(PackageWrapper):
     """ Wrapper around GNU Autotools system. """
-    
+
     def __init__(self):
         """ Setups the tool with the packageprofile.
         """
         PackageWrapper.__init__(self)
-        
+
     def addScript(self, script, mode='post'):
         if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
         scriptfile = self.srcdir / script
         if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
         key = '%sscript' % mode
         self.scripts[key] = stripShebang(scriptfile)
-        
+
     def verify(self):
         """ Verify package is supported. """
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
@@ -390,13 +395,13 @@ class AutoToolsWrapper(PackageWrapper):
         if not filename.exists(): raise FileDoesNotExistError, filename
         if not tarfile.is_tarfile(filename): return False
         return True
-        
+
     def configure(self, **kwargs):
         """ Configuration stage for this class. """
         filename = self.srcdir / self.filename
         if not self.buildsrc.exists():
             unpackTarfile(filename,self.tmpdir)
-        
+
         configure_args = []
         for k,v in kwargs.items():
             configure_args.append('%s=%s' % (k,v))
@@ -408,39 +413,39 @@ class AutoToolsWrapper(PackageWrapper):
 
         configP = subprocess.Popen(cmd,shell=True,cwd=self.buildsrc)
         configP.wait()
-        
-        
+
+
     def build(self, **kwargs):
         """ Build stage for this class. """
-        
+
         make_args = []
         for k,v in kwargs.items():
             make_args.append('%s=%s' % (k,v))
-    
+
         if self.verbose:
             cmd = ' '.join(['make'] + make_args)
         else:
             cmd = ' '.join(['make'] + make_args + ['> /dev/null 2>&1'])
-        
+
         makeP = subprocess.Popen(cmd,shell=True,cwd=self.buildsrc)
-        makeP.wait()        
-       
+        makeP.wait()
+
     def install(self, **kwargs):
         """ Installation stage for this class. """
 
         makeinstall_args = []
         for k,v in kwargs.items():
             makeinstall_args.append('%s=%s' % (k,v))
-        
+
         if self.verbose:
             cmd = ' '.join(['make'] + makeinstall_args + ['install'])
         else:
             cmd = ' '.join(['make'] + makeinstall_args + ['install > /dev/null 2>&1'])
 
         makeinstallP = subprocess.Popen(cmd,shell=True,cwd=self.buildsrc)
-        makeinstallP.wait()        
+        makeinstallP.wait()
 
-        
+
     def _packRPM(self, verbose=False):
         """ RPM handling stage for this class. """
         self.namespace = prepareNS(self)
@@ -448,7 +453,7 @@ class AutoToolsWrapper(PackageWrapper):
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
-            
+
         destroot = self.builddir / buildroot
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
@@ -456,7 +461,7 @@ class AutoToolsWrapper(PackageWrapper):
         tmpl = getPackageSpecTmpl(self.templatesdir)
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile
-        
+
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=verbose)
         return rpmbuilder.build()
 
@@ -466,7 +471,7 @@ class SRPMWrapper(PackageWrapper):
 
     def __init__(self):
         PackageWrapper.__init__(self)
-        
+
     def verify(self):
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         filename = self.srcdir / self.filename
@@ -493,20 +498,19 @@ class SRPMWrapper(PackageWrapper):
         return rpmbuilder.build()
 
 
-
 class BinaryPackageWrapper(PackageWrapper):
     """ Wrapper around binary distribution packages. """
-    
+
     def __init__(self):
         PackageWrapper.__init__(self)
-        
+
     def addScript(self, script, mode='post'):
         if not mode in ['post','pre','postun','preun']: raise UnsupportedScriptMode, mode
         scriptfile = self.srcdir / script
         if not scriptfile.exists(): raise FileDoesNotExistError, scriptfile
         key = '%sscript' % mode
         self.scripts[key] = stripShebang(scriptfile)
-        
+
     def verify(self):
         """ Verify package is supported. """
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
@@ -535,7 +539,7 @@ class BinaryPackageWrapper(PackageWrapper):
         buildroot = 'packages/BUILD/%s-%s-%s' % (self.namespace['pkgname'],
             self.namespace['pkgversion'],
             self.namespace['pkgrelease'])
-            
+
         destroot = self.builddir / buildroot
         if destroot.exists(): destroot.rmtree()
         destroot.makedirs()
@@ -543,17 +547,44 @@ class BinaryPackageWrapper(PackageWrapper):
         tmpl = getPackageSpecTmpl(self.templatesdir)
         _specfile = '.'.join([self.namespace['pkgname'],'spec'])
         specfile = self.builddir / _specfile
-        
+
         rpmbuilder = RPMBuilder(ns=self.namespace,template=tmpl,sourcefile=specfile,verbose=verbose)
         return rpmbuilder.build()
-        
-        
+
+
+class BinaryDirectoryWrapper(BinaryPackageWrapper):
+    """ Wrapper around untarred binary distribution packages. """
+    def __init__(self):
+        BinaryPackageWrapper.__init__(self)
+
+    def verify(self):
+        """ Verify package is supported. """
+        if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
+        if not hasattr(self,'installroot'): raise PackageAttributeNotDefined, 'installroot'
+        if not self.installroot: raise PackageAttributeNotDefined, 'installroot'
+        # self.filename is actually a directory name.
+        filename = self.srcdir / self.filename
+        if not filename.exists(): raise FileDoesNotExistError, filename
+        return True
+
+    def configure(self, **kwargs):
+        """ Configuration stage for this class. """
+        pass
+
+    def install(self, prefix):
+        """ Installation stage for this class. """
+        srcdir = self.srcdir / self.filename
+        destroot = path(prefix).abspath()
+        cpio_copytree(srcdir,destroot)
+
+
+
 class RPMWrapper(PackageWrapper):
     """ Wrapper around RPM packages. """
-    
+
     def __init__(self):
         PackageWrapper.__init__(self)
-        
+
     def verify(self):
         if not hasattr(self,'filename'): raise PackageAttributeNotDefined, 'filename'
         if not path(self.srcdir / self.filename).exists() or not path(self.pkgdir / self.filename).exists():
@@ -569,15 +600,15 @@ class RPMWrapper(PackageWrapper):
 class DistroPackageWrapper(PackageWrapper):
     """ Wrapper around packages that already exists for that distro.
     """
-    
+
     def __init__(self):
         PackageWrapper.__init__(self)
-        
+
     def verify(self):
         # FIXME : this is fake. we should actually check the distro repository to see if this package
         # actually exists.
         return True
-        
+
     def deploy(self, pkgname='rpm', verbose=False):
         return 0
 
@@ -599,7 +630,7 @@ class RPMBuilder:
     def _write(self):
         f = path(self.sourcefile)
         out = open(f, 'w')
-        t = Template(file=str(self.template), searchList=[self.ns])  
+        t = Template(file=str(self.template), searchList=[self.ns])
         out.write(str(t))
         out.close()
 
@@ -622,7 +653,7 @@ class RPMBuilder:
 
         rpmP = subprocess.Popen(cmd,shell=True)
         rpmP.wait()
-        
-        return rpmP.returncode        
+
+        return rpmP.returncode
 
 

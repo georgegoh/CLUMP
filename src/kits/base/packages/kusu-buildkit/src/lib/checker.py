@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# $Id$
+# $Id: checker.py 4688 2010-04-05 17:00:18Z ltsai $
 #
 # Copyright 2007 Platform Computing Inc.
 #
@@ -9,7 +9,7 @@
 
 from kusu.util.errors import KitscriptValidateError
 
-SUPPORTED_SRCTYPES = ['base', 'autotools', 'srpm', 'binary', 'distro', 'rpm', 'component', 'kit']
+SUPPORTED_SRCTYPES = ['base', 'autotools', 'srpm', 'binary', 'binarydir', 'distro', 'rpm', 'component', 'kit']
 
 def getSyntaxValidator(obj):
     """ Factory function to return the correct Validator instance.
@@ -81,7 +81,13 @@ class BinaryValidator(PackageProfileValidator):
         super(BinaryValidator, self).__init__(obj)
         self.attributes = ['filename', 'installroot', 'version', 'release']
 
-        
+
+class BinarydirValidator(BinaryValidator):
+
+    def __init__(self, obj):
+        super(BinarydirValidator, self).__init__(obj)
+
+       
 class RpmValidator(PackageProfileValidator):
 
     def __init__(self, obj):
