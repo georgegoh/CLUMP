@@ -15,7 +15,6 @@ from path import path
 from kusu.util.errors import  FileDoesNotExistError, KitDefinitionEmpty, PackageBuildError
 from kusu.util.tools import mkdtemp, cpio_copytree, getArch
 from kusu.util.kits import processKitInfo
-from Cheetah.Template import Template
 import tool01
 
 class BuildKit(tool01.BuildKit):
