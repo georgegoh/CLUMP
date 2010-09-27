@@ -122,6 +122,14 @@ signal.signal(signal.SIGINT, handleSignal)
 signal.signal(signal.SIGTERM, handleSignal)
 
 
+# TODO: dirty hack to get things working again (line 291)
+# this should be refactored out of here and nghosts.py
+# into a util class.
+def getNodegroupType(db, ngname):
+    ng = db.NodeGroups.selectfirst_by(ngname=ngname)
+    return ng.type.lower()
+
+
 class AddHostApp(KusuApp):
 
     def __init__(self):
